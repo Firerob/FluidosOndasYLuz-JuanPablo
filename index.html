@@ -8,284 +8,296 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23070B14'/%3E%3Cpath d='M4 16c3-9 9-9 12 0s9 9 12 0' fill='none' stroke='%232EE6A6' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M4 16c3 9 9 9 12 0s9-9 12 0' fill='none' stroke='%232EE6A6' stroke-opacity='.45' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,400;1,500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <style>
+/* =====================================================================
+   Interfaz de instrumentación: paneles acoplados, superficies mates,
+   separadores de 1 px, poco texto y un único acento funcional.
+   Etiquetas secundarias 10–11 px en gris técnico; valores 13–14 px mono.
+   ===================================================================== */
 :root{
-  --bg:#070B14;
-  --glass:rgba(13,20,36,.68);
-  --glass-stage:rgba(9,15,28,.66);
-  --line:rgba(150,172,210,.12);
-  --line-2:rgba(150,172,210,.22);
-  --ink:#E6EDF7;
-  --ink-2:#B3BFD2;
-  --mute:#7C89A0;
-  --faint:#4A5569;
-  --emerald:#2EE6A6;
-  --cyan:#62C9FF;
-  --amber:#FFC56B;
-  --rose:#FF6F8E;
-  --violet:#A495FF;
-  --orange:#FF9D5C;
-  --steel:#9FB2CC;
-  --r-xl:20px; --r-lg:14px; --r-md:10px; --r-sm:7px;
-  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --app:#0A0C10;
+  --dock:#0E1116;
+  --bay:#0B0E13;
+  --row:#131720;
+  --hover:#1A1F29;
+  --sep:#222630;      /* separadores estructurales */
+  --div:#1E232D;      /* divisores de sección */
+  --field:#07090C;    /* displays numéricos */
+  --field-b:#2A303C;
+  --raise:#141821;    /* botones */
+  --ink:#E5E7EB;
+  --ink-2:#C9D1D9;
+  --lab:#6B7280;      /* etiquetas secundarias */
+  --dim:#4B5563;
+  --accent:#F59E0B;   /* control activo */
+  --accent-bg:#1E180C;
+  --ok:#10B981;       /* resonancia */
+  --sans:"IBM Plex Sans","Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
   --math:"IBM Plex Serif","Cambria Math",Cambria,"Times New Roman",serif;
-  --ease:cubic-bezier(.2,.7,.2,1);
+  --bar:36px;
+  --bay-h:224px;
 }
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:400 13.5px/1.45 var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-variant-numeric:tabular-nums}
+html,body{margin:0;height:100%;background:var(--app);color:var(--ink);font:400 12px/1.45 var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body{overflow:hidden}
 button,input{font:inherit;color:inherit}
-button{cursor:pointer;background:none;border:0;padding:0}
-button:disabled{cursor:not-allowed;opacity:.4}
-:focus-visible{outline:2px solid var(--emerald);outline-offset:2px;border-radius:6px}
-i.v,.v{font-family:var(--math);font-style:italic;font-weight:400;letter-spacing:0}
+button{cursor:pointer;background:none;border:0;padding:0;border-radius:2px}
+button:disabled{cursor:not-allowed;opacity:.35}
+[hidden]{display:none!important}
+:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+.v{font-family:var(--math);font-style:italic;font-weight:400;letter-spacing:0}
 sub{font-size:.72em;line-height:0}
+b,dd,td,kbd{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-/* ---------- layout ---------- */
-#app{position:relative;display:grid;height:100vh;height:100dvh;padding:12px;gap:12px;
-  grid-template-columns:330px minmax(0,1fr) 352px;grid-template-areas:"left stage right";
-  background:
-    radial-gradient(900px 520px at 46% 18%,rgba(46,230,166,.055),transparent 62%),
-    radial-gradient(800px 600px at 85% 105%,rgba(98,201,255,.05),transparent 60%),
-    var(--bg);}
+/* ---------- estructura: banco central + paneles acoplados ---------- */
+#app{display:grid;height:100vh;height:100dvh;grid-template-columns:288px minmax(0,1fr) 312px;grid-template-areas:"left center right";background:var(--app)}
 .side-wrap{display:contents}
-#panel-left{grid-area:left}
-#panel-right{grid-area:right}
-#stage{grid-area:stage}
-.panel{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:2px;scrollbar-width:thin;scrollbar-color:rgba(150,172,210,.18) transparent}
-.panel::-webkit-scrollbar{width:6px}
-.panel::-webkit-scrollbar-thumb{background:rgba(150,172,210,.18);border-radius:3px}
+#panel-left{grid-area:left;border-right:1px solid var(--sep)}
+#panel-right{grid-area:right;border-left:1px solid var(--sep)}
+.center{grid-area:center;display:grid;grid-template-rows:var(--bar) minmax(0,1fr) var(--bar) var(--bay-h);min-width:0;min-height:0}
 
-.card{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;
-  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 14px 34px -16px rgba(0,0,0,.7)}
-.card h2{margin:0;font-size:14.5px;font-weight:600;letter-spacing:.003em}
-.card .lede{margin:2px 0 14px;color:var(--mute);font-size:12px;line-height:1.45}
-.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.dock{background:var(--dock);min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+.dock::-webkit-scrollbar,.side-wrap::-webkit-scrollbar{width:8px}
+.dock::-webkit-scrollbar-thumb,.side-wrap::-webkit-scrollbar-thumb{background:#2A303C}
+.dock-title{height:var(--bar);flex:0 0 var(--bar);display:flex;align-items:center;gap:9px;padding:0 14px;border-bottom:1px solid var(--sep);overflow:hidden}
+.dock-title h1{margin:0;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sec{padding:11px 14px 13px;border-bottom:1px solid var(--div)}
+.sec-h{margin:0 0 9px;font-size:10px;font-weight:600;line-height:1.2;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sec-head .sec-h{margin:0}
 
-/* ---------- brand ---------- */
-.brand{display:flex;gap:12px;align-items:center;padding:2px 4px 0}
-.brand svg{flex:0 0 auto}
-.brand h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.15}
-.brand p{margin:2px 0 0;color:var(--mute);font-size:12px;line-height:1.35}
-
-/* ---------- parameter controls ---------- */
-.ctrl{padding:10px 0 11px;border-top:1px solid var(--line)}
-.ctrl:first-of-type{border-top:0;padding-top:8px}
-.ctrl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.ctrl-head label{display:flex;align-items:baseline;gap:8px;font-weight:500;color:var(--ink);font-size:13px}
-.ctrl-head label .v{font-size:17px;color:var(--acc)}
-.num-wrap{position:relative;flex:0 0 auto}
-.num{width:112px;background:rgba(4,8,16,.62);border:1px solid var(--line-2);border-radius:var(--r-sm);
-  font-weight:600;font-size:15px;line-height:1;padding:7px 40px 7px 10px;text-align:right;font-variant-numeric:tabular-nums;
-  transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield;appearance:textfield}
+/* ---------- controles de parámetro ---------- */
+.ctrl + .ctrl{margin-top:11px;padding-top:10px;border-top:1px solid var(--div)}
+.ctrl-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ctrl-head label{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.ctrl-head label .v{font-size:13px;color:var(--lab)}
+.num-wrap{display:flex;align-items:stretch;height:28px;flex:0 0 auto;background:var(--field);border:1px solid var(--field-b);border-radius:2px}
+.num-wrap:focus-within{border-color:var(--accent)}
+.num{width:86px;padding:0 8px;background:transparent;border:0;outline:none;color:var(--ink);font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.num:focus-visible{outline:none}
 .num::-webkit-inner-spin-button,.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.num:hover{border-color:rgba(150,172,210,.34)}
-.num:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
-.num-wrap .unit{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:11.5px;pointer-events:none}
-.ctrl-foot{display:flex;justify-content:space-between;gap:8px;margin-top:4px;color:var(--mute);font-size:11.8px}
-.ctrl-foot b{color:var(--ink-2);font-weight:600}
-.ctrl-foot.big{margin-top:8px;padding:8px 10px;border-radius:9px;background:rgba(255,157,92,.07);border:1px solid rgba(255,157,92,.18);color:#d9b9a2}
-.ctrl-foot.big b{color:#FFD7BC;font-size:14px}
+.num-wrap .unit{display:flex;align-items:center;justify-content:center;min-width:36px;padding:0 6px;border-left:1px solid var(--field-b);background:#0B0E13;font:500 10.5px var(--mono);color:var(--lab)}
 
-input[type=range].range{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0;--p:50%}
-.range::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--acc) 0 var(--p),rgba(150,172,210,.16) var(--p) 100%)}
-.range::-moz-range-track{height:4px;border-radius:4px;background:rgba(150,172,210,.16)}
-.range::-moz-range-progress{height:4px;border-radius:4px;background:var(--acc)}
-.range::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:#0A1222;border:2px solid var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 14%,transparent),0 0 14px color-mix(in srgb,var(--acc) 45%,transparent);transition:transform .12s}
-.range:active::-webkit-slider-thumb{transform:scale(1.15)}
-.range::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#0A1222;border:2px solid var(--acc)}
+/* fader de consola: cursor rectangular estrecho sobre pista de 2 px */
+input[type=range].range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:22px;margin:3px 0 0;background:transparent;cursor:pointer;--p:50%}
 .range:focus-visible{outline:none}
-.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px color-mix(in srgb,var(--acc) 35%,transparent)}
+.range::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,#8B949E 0 var(--p),#2A303C var(--p) 100%)}
+.range::-moz-range-track{height:2px;background:#2A303C}
+.range::-moz-range-progress{height:2px;background:#8B949E}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:16px;margin-top:-7px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range::-moz-range-thumb{width:8px;height:16px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range:hover::-webkit-slider-thumb,.range:focus-visible::-webkit-slider-thumb,.range:active::-webkit-slider-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
+.range:hover::-moz-range-thumb,.range:focus-visible::-moz-range-thumb,.range:active::-moz-range-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
 
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:11.5px;color:var(--ink-2);background:rgba(150,172,210,.08);border:1px solid var(--line)}
-.chip.disc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dc,#cf9f45);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
-.mats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
-.mat{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:6px 9px;border-radius:9px;text-align:left;background:rgba(4,8,16,.45);border:1px solid var(--line);transition:border-color .15s,background .15s}
-.mat:hover{border-color:rgba(159,178,204,.4)}
-.mat b{font-weight:500;font-size:12.2px;color:var(--ink);line-height:1.25}
-.mat span{font-size:11.2px;color:var(--mute)}
-.mat[aria-pressed=true]{border-color:rgba(159,178,204,.7);background:rgba(159,178,204,.12)}
+/* lectura de valor: etiqueta secundaria + valor mono grande */
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px}
+.kv > span:first-child{font-size:10.5px;color:var(--lab)}
+.kv .val{font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.kv .val b{font-size:14px;font-weight:500;color:var(--ink)}
 
-/* ---------- diagnosis ---------- */
-.diag{--st:#9AA8BD;transition:border-color .4s}
-.diag[data-state=res]{--st:var(--emerald);border-color:rgba(46,230,166,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 0 40px -18px rgba(46,230,166,.6),0 14px 34px -16px rgba(0,0,0,.7)}
-.diag[data-state=near]{--st:var(--amber)}
-.diag-top{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin:8px 0 10px}
-.loops{display:flex;flex-direction:column;align-items:flex-start}
-.loops-n{font-size:42px;font-weight:600;line-height:.95;letter-spacing:-.03em;color:var(--st);transition:color .4s}
-.diag[data-state=res] .loops-n{text-shadow:0 0 26px rgba(46,230,166,.45)}
-.loops-cap{font-size:12px;color:var(--ink-2);margin-top:4px}
-.glyph-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-#d-glyph{width:150px;height:48px;display:block}
-.state-pill{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;color:var(--st);background:color-mix(in srgb,var(--st) 12%,transparent);border:1px solid color-mix(in srgb,var(--st) 35%,transparent)}
-.state-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
-.meter-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.meter{position:relative;flex:1;height:8px;border-radius:4px;background:rgba(150,172,210,.13);overflow:hidden}
-.meter i{position:absolute;inset:0 auto 0 0;width:0;border-radius:4px;background:linear-gradient(90deg,#3b7fb8,var(--cyan) 55%,var(--emerald))}
-.meter::after{content:"";position:absolute;top:0;bottom:0;left:85%;width:1px;background:rgba(230,237,247,.45)}
-.meter-val{font-size:12px;color:var(--ink-2);min-width:86px;text-align:right}
-.meter-val b{color:var(--ink);font-weight:600}
-.dl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:0 0 12px;font-size:12.3px}
-.dl dt{color:var(--mute)}
-.dl dd{margin:0;text-align:right;color:var(--ink);font-weight:500}
-.btn-primary{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;
-  background:linear-gradient(180deg,rgba(46,230,166,.24),rgba(46,230,166,.09));border:1px solid rgba(46,230,166,.5);color:#E4FFF4;font-weight:600;font-size:14px;
-  box-shadow:0 0 26px -8px rgba(46,230,166,.55),inset 0 1px 0 rgba(255,255,255,.09);transition:transform .14s var(--ease),box-shadow .2s,background .2s}
-.btn-primary:hover:not(:disabled){box-shadow:0 0 34px -6px rgba(46,230,166,.7),inset 0 1px 0 rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(46,230,166,.3),rgba(46,230,166,.12))}
-.btn-primary:active:not(:disabled){transform:translateY(1px)}
-.btn-primary .sub{font-weight:500;font-size:12.5px;color:#A7F5D8}
-.btn-primary svg{flex:0 0 auto}
+/* selector compacto de material */
+.pick{position:relative;margin-top:8px}
+.pick-btn{width:100%;height:28px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 9px;background:var(--raise);border:1px solid var(--field-b);font-size:11.5px;color:var(--ink-2);text-align:left}
+.pick-btn:hover{border-color:#3A4150;color:var(--ink)}
+.pick-btn[aria-expanded=true]{border-color:var(--accent)}
+.pick-btn .pk-l{font-size:10px;color:var(--lab);letter-spacing:.06em;text-transform:uppercase}
+.pick-btn #mat-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-btn svg{flex:0 0 auto;color:var(--lab)}
+.mats{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:20;display:flex;flex-direction:column;background:var(--dock);border:1px solid var(--field-b);border-radius:2px}
+.mat{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:7px 9px;text-align:left;border-radius:0;border-bottom:1px solid var(--div)}
+.mat:last-child{border-bottom:0}
+.mat:hover{background:var(--hover)}
+.mat b{font-weight:500;font-size:11.5px;color:var(--ink)}
+.mat span{font:400 11px var(--mono);color:var(--lab)}
+.mat[aria-pressed=true]{background:var(--accent-bg);box-shadow:inset 2px 0 0 var(--accent)}
+.mat[aria-pressed=true] b{color:var(--accent)}
 
-/* ---------- right panel ---------- */
-.meta{font-size:11.8px;color:var(--mute);margin:2px 0 10px}
-.meta b{color:var(--ink-2);font-weight:600}
-.modes{width:100%;border-collapse:separate;border-spacing:0 3px;font-size:12.5px}
-.modes th{font-weight:500;color:var(--mute);text-align:right;padding:0 6px 3px;font-size:11.2px;white-space:nowrap}
-.modes th:first-child{text-align:center}
-.modes td{padding:7px 6px;text-align:right;background:rgba(4,8,16,.4);transition:background .2s,color .2s;white-space:nowrap}
-.modes td:first-child{border-radius:8px 0 0 8px;text-align:center;font-weight:600;color:var(--ink-2)}
-.modes td:last-child{border-radius:0 8px 8px 0}
+/* ---------- diagnóstico ---------- */
+.diag{--st:var(--lab)}
+.diag[data-state=res]{--st:var(--ok)}
+.diag[data-state=near]{--st:var(--accent)}
+.state{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--st);white-space:nowrap}
+.state::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.readout{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;padding:6px 0 10px}
+.loops{display:flex;flex-direction:column}
+.loops-n{font:600 36px/1 var(--mono);color:var(--st)}
+.loops-cap{margin-top:4px;font-size:10.5px;color:var(--lab);white-space:nowrap}
+#d-glyph{display:block;width:100%;height:42px}
+.meter-row{display:flex;align-items:center;gap:10px}
+.meter{position:relative;flex:1;height:4px;background:#1A1F29}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:#8B949E}
+.diag[data-state=res] .meter i{background:var(--ok)}
+.meter::after{content:"";position:absolute;left:85%;top:-3px;bottom:-3px;width:1px;background:#8B949E}
+.meter-val{min-width:76px;text-align:right;font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.meter-val b{font-size:13px;font-weight:500;color:var(--ink)}
+.btn-primary{width:100%;height:32px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 10px;background:var(--raise);border:1px solid var(--field-b);border-radius:2px;font-size:12px;font-weight:600;color:var(--ink)}
+.btn-primary .ba{display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-primary .sub{font:500 12px var(--mono);color:var(--ink-2)}
+
+/* ---------- panel derecho con pestañas ---------- */
+.tabs{display:flex;height:var(--bar);flex:0 0 var(--bar);border-bottom:1px solid var(--sep)}
+.tabs [role=tab]{flex:1;height:100%;padding:0 6px;border-radius:0;font-size:11px;font-weight:500;color:var(--lab);border-right:1px solid var(--div);white-space:nowrap}
+.tabs [role=tab]:last-child{border-right:0}
+.tabs [role=tab]:hover{color:var(--ink-2);background:var(--hover)}
+.tabs [role=tab][aria-selected=true]{color:var(--accent);background:var(--accent-bg);box-shadow:inset 0 -2px 0 var(--accent)}
+.tabs [role=tab] .v{font-size:12px}
+.pane{padding:12px 14px 14px}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--div)}
+.modes{width:100%;border-collapse:collapse;font:400 12.5px var(--mono)}
+.modes th{padding:6px;text-align:right;font:500 10px var(--sans);color:var(--lab);background:#0B0E13;border-bottom:1px solid var(--sep);white-space:nowrap}
+.modes th:first-child,.modes td:first-child{width:26px;text-align:center}
+.modes td{padding:7px 6px;text-align:right;color:var(--ink-2);border-bottom:1px solid var(--div);white-space:nowrap}
+.modes tbody tr:last-child td{border-bottom:0}
+.modes tbody tr:nth-child(even) td{background:var(--row)}
 .modes tbody tr{cursor:pointer;outline:none}
-.modes tbody tr:hover td{background:rgba(98,201,255,.09)}
-.modes tbody tr:focus-visible td{background:rgba(98,201,255,.14)}
-.modes tr.is-near td{box-shadow:inset 0 1px 0 rgba(255,197,107,.35),inset 0 -1px 0 rgba(255,197,107,.35)}
-.modes tr.is-near td:first-child{box-shadow:inset 1px 1px 0 rgba(255,197,107,.35),inset 0 -1px 0 rgba(255,197,107,.35)}
-.modes tr.is-res td{background:rgba(46,230,166,.15);color:#EBFFF7}
-.modes tr.is-res td:first-child{color:var(--emerald)}
-.modes tr.is-out td{opacity:.42}
-.modes .fn{font-weight:600;color:var(--ink)}
-.mpill{padding:2px 7px;border-radius:6px;border:1px solid rgba(255,157,92,.35);color:#FFD2B3;font-size:11.8px;background:rgba(255,157,92,.06);transition:background .15s}
-.mpill:hover:not(:disabled){background:rgba(255,157,92,.18)}
-.rbar{display:block;height:5px;width:44px;border-radius:3px;background:rgba(150,172,210,.14);overflow:hidden;margin-left:auto}
-.rbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--emerald));border-radius:3px}
-.foot-note{margin:8px 0 0;font-size:11.5px;color:var(--mute)}
-.table-wrap{overflow-x:auto;margin:0 -4px;padding:0 4px}
-.qbtn{font-size:11px;color:var(--mute);padding:3px 7px;border-radius:6px;border:1px solid var(--line);transition:color .15s,border-color .15s}
-.qbtn:hover{color:var(--ink);border-color:var(--line-2)}
-.qbtn[data-q=ligera]{color:var(--amber);border-color:rgba(255,197,107,.35)}
+.modes tbody tr:hover td,.modes tbody tr:focus-visible td{background:var(--hover)}
+.modes .fn{color:var(--ink);font-weight:500}
+.modes tr.is-res td{color:var(--ok)}
+.modes tr.is-res td:first-child{box-shadow:inset 2px 0 0 var(--ok)}
+.modes tr.is-near td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.modes tr.is-out td{color:var(--dim)}
+.mpill{padding:1px 5px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 12px var(--mono);color:var(--ink-2)}
+.mpill:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.mpill:disabled{opacity:1;border-color:transparent;background:none;color:var(--dim)}
+.rbar{display:inline-block;vertical-align:middle;width:36px;height:3px;background:#1E232D}
+.rbar i{display:block;height:100%;width:0;background:#8B949E}
+.modes tr.is-res .rbar i{background:var(--ok)}
 
-.seg{display:inline-flex;background:rgba(4,8,16,.55);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
-.seg button{padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:var(--ink-2);transition:background .15s,color .15s;white-space:nowrap}
-.seg button:hover{color:var(--ink)}
-.seg button[aria-pressed=true]{background:rgba(98,201,255,.16);color:var(--ink);box-shadow:inset 0 0 0 1px rgba(98,201,255,.38)}
-#spec-cv{display:block;width:100%;height:150px;cursor:crosshair;touch-action:none}
-.spec-cap{margin:6px 0 0;font-size:11.8px;color:var(--mute)}
-.spec-cap b{color:var(--ink-2);font-weight:600}
+.sheet{margin:0;border:1px solid var(--div)}
+.sheet > div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 9px;border-bottom:1px solid var(--div)}
+.sheet > div:last-child{border-bottom:0}
+.sheet > div:nth-child(even){background:var(--row)}
+.sheet dt{font-size:10.5px;color:var(--lab);white-space:nowrap}
+.sheet dt .v{font-size:12px}
+.sheet dd{margin:0;font:500 13px var(--mono);color:var(--ink);text-align:right;white-space:nowrap}
+.sheet dd small{margin-left:5px;font-size:10.5px;font-weight:400;color:var(--lab)}
+.sheet .chips-row{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 6px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10.5px var(--mono);color:var(--ink-2)}
+.chip.disc::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--dc,#cf9f45)}
 
-.kpis{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0}
-.kpi{padding:8px 10px;border-radius:10px;background:rgba(4,8,16,.4);border:1px solid var(--line)}
-.kpi dt{font-size:11.3px;color:var(--mute);margin:0 0 1px}
-.kpi dd{margin:0;font-size:15px;font-weight:600}
-.kpi dd small{font-size:11px;color:var(--mute);font-weight:500;margin-left:3px}
+/* ---------- barras de herramientas ---------- */
+.toolbar{display:flex;align-items:center;gap:8px;min-width:0;padding:0 10px;background:var(--dock);white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.tb-top{border-bottom:1px solid var(--sep)}
+.time-dock{border-top:1px solid var(--sep);border-bottom:1px solid var(--sep)}
+.tb-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 4px;background:var(--sep)}
+.tb-fill{flex:1 1 auto}
+.seg{display:inline-flex;flex:0 0 auto;background:var(--raise);border:1px solid var(--field-b);border-radius:2px}
+.seg > button{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:0;border-left:1px solid var(--field-b);font-size:11px;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg > button:first-child{border-left:0}
+.seg > button:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.seg > button[aria-pressed=true]{background:var(--accent-bg);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg > .tog[aria-pressed=true]{background:var(--raise);color:var(--ink-2);box-shadow:none}
+.seg > .tog[aria-pressed=true]:hover{background:var(--hover)}
+.seg.sm > button{height:20px;padding:0 8px;font-size:10.5px}
+.cam-btn svg{flex:0 0 auto;opacity:.8}
+.led{flex:0 0 auto;width:7px;height:7px;border-radius:1px;background:#1A1F29;border:1px solid #3A4150}
+.tog[aria-pressed=true] .led{background:var(--accent);border-color:var(--accent)}
+.lbl-s{display:none}
+.qbtn{flex:0 0 auto;height:24px;padding:0 9px;background:var(--raise);border:1px solid var(--field-b);font-size:11px;color:var(--ink-2)}
+.qbtn:hover{color:var(--ink)}
+.qbtn[data-q=ligera]{color:var(--accent);border-color:#5A3D0A}
+.fps{min-width:54px;text-align:right;font:500 10.5px var(--mono);color:var(--lab)}
+.tread{font:400 10.5px var(--mono);color:var(--lab)}
+.tread b{font-size:13px;font-weight:500;color:var(--ink)}
+.tread.frozen b{color:var(--accent)}
 
-.eqs{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
-.eqs li{display:flex;flex-direction:column;gap:1px}
-.eq{font-family:var(--math);font-style:italic;font-size:16px;color:var(--ink);display:flex;align-items:center;flex-wrap:wrap;gap:4px}
-.eq .up{font-style:normal;font-family:var(--sans);font-size:14px}
-.eqs small{color:var(--mute);font-size:11.5px}
-.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.82em;line-height:1.05;margin:0 2px}
-.frac>span:first-child{border-bottom:1px solid currentColor;padding:0 3px 1px}
-.frac>span:last-child{padding:1px 3px 0}
-.sqrt{display:inline-flex;align-items:center}
-.sqrt::before{content:"√";font-style:normal;font-family:var(--sans);font-size:1.15em;margin-right:-1px}
-.sqrt>span{border-top:1px solid currentColor;padding:1px 2px 0}
-.keys{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--mute);margin-top:2px}
-kbd{font:600 10.5px var(--sans);padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);background:rgba(4,8,16,.6);color:var(--ink-2);margin-right:3px}
-
-/* ---------- stage ---------- */
-#stage{position:relative;min-height:0;border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--line);background:var(--bg);isolation:isolate}
+/* ---------- visor 3D ---------- */
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:#070B14}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
-.vignette{position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(130% 100% at 50% 42%,transparent 58%,rgba(3,6,12,.6) 100%)}
 .ov{position:absolute;z-index:2}
-.glass{background:var(--glass-stage);border:1px solid var(--line);border-radius:var(--r-lg);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);box-shadow:0 10px 30px -14px rgba(0,0,0,.8)}
-.hud-tl{top:14px;left:14px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:calc(100% - 400px);pointer-events:none}
-.status{--st:#9AA8BD;white-space:nowrap;display:inline-flex;align-items:center;gap:10px;padding:8px 14px 8px 12px;border-radius:999px;font-weight:600;font-size:13.5px;border-color:color-mix(in srgb,var(--st) 40%,transparent);transition:border-color .4s,box-shadow .4s}
-.status[data-state=res]{--st:var(--emerald);box-shadow:0 0 30px -10px rgba(46,230,166,.7)}
-.status[data-state=near]{--st:var(--amber)}
-.status .dot{width:9px;height:9px;border-radius:50%;background:var(--st);box-shadow:0 0 0 4px color-mix(in srgb,var(--st) 20%,transparent),0 0 14px var(--st)}
-.status[data-state=res] .dot{animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--st) 8%,transparent),0 0 18px var(--st)}}
-.status .sn{color:var(--st);font-weight:600}
-.eq-live{padding:7px 12px;border-radius:10px;font-size:13.5px;color:var(--ink-2);white-space:nowrap}
-.eq-live i{font-family:var(--math);font-style:italic;color:var(--ink);font-size:1.08em}
-.eq-live b{color:var(--ink);font-weight:600}
-.hint{padding:5px 10px;border-radius:8px;font-size:11.8px;color:var(--ink-2);opacity:0;transform:translateY(-4px);transition:opacity .35s,transform .35s}
-.hint.show{opacity:1;transform:none}
-.cam-dock{top:14px;right:14px;display:flex;gap:3px;padding:4px}
-.cam-btn{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:10px;color:var(--ink-2);font-size:12.5px;font-weight:500;transition:background .15s,color .15s}
-.cam-btn:hover{color:var(--ink);background:rgba(150,172,210,.08)}
-.cam-btn[aria-pressed=true]{background:rgba(98,201,255,.15);color:var(--ink);box-shadow:inset 0 0 0 1px rgba(98,201,255,.38)}
-.cam-btn svg{opacity:.85}
-
-.bottom-bar{position:absolute;left:14px;right:14px;bottom:14px;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;pointer-events:none}
-.bottom-bar>*{pointer-events:auto}
-.scope{flex:1 1 300px;max-width:620px;padding:10px 12px 8px}
-.scope-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
-.scope-head h3{margin:0;font-size:12.5px;font-weight:600}
-.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11.2px;color:var(--mute)}
-.legend span{display:inline-flex;align-items:center;gap:5px}
-.legend i{width:12px;height:3px;border-radius:2px;background:var(--c)}
-.legend i.dot{width:7px;height:7px;border-radius:50%}
-#scope-cv{display:block;width:100%;height:164px}
-.time-dock{flex:0 0 auto;padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch}
-.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px;border-radius:8px;border:1px solid var(--line-2);background:rgba(4,8,16,.5);font-size:12px;font-weight:500;color:var(--ink-2);transition:background .15s,color .15s,border-color .15s;white-space:nowrap}
-.btn:hover:not(:disabled){color:var(--ink);border-color:rgba(150,172,210,.4)}
-.btn.play{min-width:104px;color:var(--ink)}
-.btn.play[aria-pressed=true]{border-color:rgba(255,197,107,.6);background:rgba(255,197,107,.12);color:#FFE3B5}
-.tread{margin-left:auto;font-size:12px;color:var(--mute);padding-left:6px}
-.tread b{color:var(--ink);font-weight:600}
-.tread.frozen b{color:var(--amber)}
-.tog{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;border:1px solid var(--line);font-size:11.8px;color:var(--ink-2);transition:border-color .15s,color .15s}
-.tog:hover{color:var(--ink)}
-.tog .sw{position:relative;width:22px;height:12px;border-radius:6px;background:rgba(150,172,210,.22);transition:background .2s}
-.tog .sw::after{content:"";position:absolute;left:2px;top:2px;width:8px;height:8px;border-radius:50%;background:#8390a6;transition:transform .2s var(--ease),background .2s}
-.tog[aria-pressed=true] .sw{background:rgba(46,230,166,.32)}
-.tog[aria-pressed=true] .sw::after{transform:translateX(10px);background:var(--emerald)}
-.fps{font-size:11px;color:var(--faint)}
-
-.loader{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:var(--bg);transition:opacity .8s ease .2s}
+.hud-tl{top:10px;left:10px;max-width:calc(100% - 20px);pointer-events:none}
+/* tarjeta de estado: la ecuación de onda solo aparece en resonancia activa */
+.status{--st:var(--lab);display:flex;flex-direction:column;gap:5px;padding:6px 10px;background:rgba(14,17,22,.92);border:1px solid var(--sep);border-left:2px solid var(--st);border-radius:2px}
+.status[data-state=res]{--st:var(--ok)}
+.status[data-state=near]{--st:var(--accent)}
+.st-row{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--st)}
+.status .sn{font:500 11.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--st)}
+.eq-live{display:none;font:400 11px var(--mono);color:var(--lab);white-space:nowrap}
+.status[data-state=res] .eq-live{display:block}
+.eq-live i{font-family:var(--math);font-style:italic;font-size:12px;color:var(--ink-2)}
+.eq-live b{font-weight:500;color:var(--ink)}
+.help-fab{position:absolute;right:10px;bottom:10px;z-index:2;height:24px;padding:0 9px;background:rgba(14,17,22,.92);border:1px solid var(--field-b);font:500 11px var(--sans);color:var(--ink-2)}
+.help-fab:hover{border-color:var(--accent);color:var(--accent)}
+.loader{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#070B14;transition:opacity .4s ease .1s}
 .loader.done{opacity:0;pointer-events:none}
-.ld{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--ink-2);font-size:13px;text-align:center;max-width:360px;padding:0 20px}
+.ld{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;padding:0 20px;text-align:center;font-size:12px;color:#8B949E}
 .ld svg path{stroke-dasharray:60;animation:dash 1.6s linear infinite}
 @keyframes dash{to{stroke-dashoffset:-120}}
-.loader.err .ld{color:#FFC9D4}
+.loader.err .ld{color:#FCA5A5}
 
-/* ---------- responsive ---------- */
+/* ---------- bahía inferior: osciloscopio y curva de resonancia ---------- */
+.bay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);min-width:0;min-height:0;background:var(--bay)}
+.bay-pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.bay-pane + .bay-pane{border-left:1px solid var(--sep)}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:10px;height:28px;flex:0 0 28px;padding:0 10px;border-bottom:1px solid var(--div);overflow:hidden}
+.pane-h h3{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab);white-space:nowrap}
+.pane-h h3 .sub{margin-left:6px;font:400 10.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--lab)}
+.legend{display:flex;gap:10px;overflow:hidden;font-size:10px;color:var(--lab);white-space:nowrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:2px;background:var(--c)}
+.legend i.dot{width:6px;height:6px;border-radius:50%}
+.plot{position:relative;flex:1 1 auto;min-height:0}
+.plot canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+#spec-cv{cursor:crosshair;touch-action:none}
+
+/* ---------- ayuda teórica (modal) ---------- */
+.help{width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;background:var(--dock);color:var(--ink);border:1px solid var(--field-b);border-radius:2px}
+.help::backdrop{background:rgba(5,7,10,.66)}
+.help-h{display:flex;align-items:center;justify-content:space-between;height:var(--bar);padding:0 14px;border-bottom:1px solid var(--sep)}
+.help-h h2{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.help-x{width:26px;height:26px;display:grid;place-items:center;color:var(--lab);border:1px solid transparent}
+.help-x:hover{color:var(--ink);border-color:var(--field-b)}
+.help-b{padding:4px 14px 14px;overflow-y:auto}
+.eqs{display:grid;grid-template-columns:auto 1fr;margin:0;padding:0}
+.eqs dt,.eqs dd{margin:0;padding:9px 0;border-bottom:1px solid var(--div)}
+.eqs dt{padding-right:18px;font-family:var(--math);font-style:italic;font-size:15px;color:var(--ink);white-space:nowrap;display:flex;align-items:center;gap:3px}
+.eqs dd{font-size:11px;color:var(--lab);display:flex;align-items:center}
+.eqs .up{font-style:normal;font-family:var(--sans);font-size:13px}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.8em;line-height:1.05}
+.frac>span:first-child{padding:0 3px 1px;border-bottom:1px solid currentColor}
+.frac>span:last-child{padding:1px 3px 0}
+.sqrt{display:inline-flex;align-items:center}
+.sqrt::before{content:"√";margin-right:-1px;font-style:normal;font-family:var(--sans);font-size:1.15em}
+.sqrt>span{padding:1px 2px 0;border-top:1px solid currentColor}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:10.5px;color:var(--lab)}
+kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10px var(--mono);color:var(--ink-2)}
+
+/* ---------- adaptación a la pantalla ---------- */
 @media (max-width:1499px){
-  #app{grid-template-columns:minmax(0,1fr) 360px;grid-template-areas:"stage side"}
-  .side-wrap{display:flex;flex-direction:column;gap:12px;grid-area:side;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(150,172,210,.18) transparent}
-  .side-wrap>.panel{overflow:visible;flex:0 0 auto}
+  #app{grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"center side"}
+  .side-wrap{display:flex;flex-direction:column;grid-area:side;min-height:0;overflow-y:auto;background:var(--dock);border-left:1px solid var(--sep);scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+  .side-wrap > .dock{flex:0 0 auto;overflow:visible;border:0}
+  #panel-right{border-top:1px solid var(--sep)}
 }
-@media (max-width:1100px){
-  .hud-tl{max-width:calc(100% - 28px)}
-  .cam-dock{top:auto;bottom:auto;right:14px;top:110px;flex-direction:column}
-}
+@media (max-width:1240px){ .tb-label{display:none} }
+@media (max-width:1060px){ .legend{display:none} }
 @media (max-width:900px){
   body{overflow:auto}
-  #app{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "side"}
-  #stage{height:auto;min-height:0;padding-top:max(62vh,380px)}
-  #gl,.vignette{bottom:auto;height:max(62vh,380px)}
-  .bottom-bar{position:relative;left:auto;right:auto;bottom:auto;padding:12px}
-  .side-wrap{overflow:visible}
-  .scope{max-width:none}
+  #app{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-areas:"center" "side"}
+  .center{grid-template-rows:auto max(56vh,340px) auto auto}
+  .toolbar{flex-wrap:wrap;row-gap:6px;padding:6px 10px;white-space:normal}
+  .tb-fill,.tb-sep{display:none}
+  .bay{grid-template-columns:minmax(0,1fr)}
+  .bay-pane{height:220px}
+  .bay-pane + .bay-pane{border-left:0;border-top:1px solid var(--sep)}
+  .side-wrap{overflow:visible;border-left:0;border-top:1px solid var(--sep)}
+  .legend{display:flex}
 }
 @media (max-width:560px){
-  #app{padding:8px;gap:8px}
   .cam-btn .lbl{display:none}
-  .eq-live,.hint{display:none}
-  .time-dock{flex:1 1 100%}
-  #scope-cv{height:140px}
-}
-@media (max-width:380px){
-  .card{padding:13px}
-  .modes td,.modes th{padding-left:3px;padding-right:3px}
-  .rbar{width:26px}
-  .mpill{padding:2px 4px}
+  .lbl-l{display:none}
+  .lbl-s{display:inline}
+  .legend,.status[data-state=res] .eq-live{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
@@ -305,220 +317,247 @@ kbd{font:600 10.5px var(--sans);padding:1px 5px;border-radius:4px;border:1px sol
 <body>
 <div id="app">
 
-  <!-- ===================== ESCENARIO 3D ===================== -->
-  <main id="stage" aria-label="Montaje experimental en 3D">
-    <canvas id="gl" aria-label="Vista 3D del experimento de Melde" tabindex="0"></canvas>
-    <div class="vignette"></div>
-
-    <div class="ov hud-tl">
-      <div class="status glass" id="status" data-state="res" role="status" aria-live="polite">
-        <span class="dot"></span><span id="status-txt">En resonancia</span><span class="sn" id="status-n">n = 2</span>
+  <!-- ===================== BANCO CENTRAL ===================== -->
+  <div class="center">
+    <div class="toolbar tb-top" role="toolbar" aria-label="Vista y capas">
+      <span class="tb-label">Vista</span>
+      <div class="seg" role="group" aria-label="Vistas de cámara">
+        <button class="cam-btn" data-cam="front" aria-pressed="false" title="Vista frontal 2D ortográfica: arrastra para desplazar y usa la rueda para acercar (tecla 1)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="3" width="13" height="10" rx="1"/><path d="M3.5 8c1.5-3 3-3 4.5 0s3 3 4.5 0"/></svg>
+          <span class="lbl">Frontal 2D</span></button>
+        <button class="cam-btn" data-cam="iso" aria-pressed="true" title="Vista isométrica 3D (tecla 2)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M2 5l6 3.5L14 5M8 8.5v6"/></svg>
+          <span class="lbl">Isométrica 3D</span></button>
+        <button class="cam-btn" data-cam="pulley" aria-pressed="false" title="Acercar a la polea y las pesas (tecla 3)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="5" r="3.3"/><path d="M10.3 5v5"/><rect x="8.3" y="10" width="4" height="4.5" rx=".5"/></svg>
+          <span class="lbl">Polea y pesas</span></button>
       </div>
-      <div class="eq-live glass" id="eq-live"></div>
-      <div class="hint glass" id="hint-2d">Vista frontal ortográfica: arrastra para desplazar y usa la rueda para acercar.</div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tb-label">Capas</span>
+      <div class="seg" role="group" aria-label="Capas visibles">
+        <button class="tog" data-tog="markers" aria-pressed="true" title="Esferas en nodos y antinodos (M)"><span class="led"></span><span class="lbl-l">Nodos y antinodos</span><span class="lbl-s">Nodos</span></button>
+        <button class="tog" data-tog="vectors" aria-pressed="true" title="Vectores de tensión, peso y velocidad (V)"><span class="led"></span>Vectores</button>
+        <button class="tog" data-tog="envelope" aria-pressed="true" title="Envolvente estroboscópica (E)"><span class="led"></span>Envolvente</button>
+      </div>
+      <span class="tb-fill"></span>
+      <button class="qbtn" id="btn-q" data-q="alta" title="Calidad gráfica: alta usa brillo, sombras y suavizado; ligera prioriza la fluidez en equipos modestos">Calidad alta</button>
+      <span class="fps" id="fps"></span>
     </div>
 
-    <div class="ov cam-dock glass" role="group" aria-label="Vistas de cámara">
-      <button class="cam-btn" data-cam="front" aria-pressed="false" title="Vista frontal 2D ortográfica (tecla 1)">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M3.5 8c1.5-3 3-3 4.5 0s3 3 4.5 0"/></svg>
-        <span class="lbl">Frontal 2D</span></button>
-      <button class="cam-btn" data-cam="iso" aria-pressed="true" title="Vista isométrica 3D (tecla 2)">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M2 5l6 3.5L14 5M8 8.5v6"/></svg>
-        <span class="lbl">Isométrica 3D</span></button>
-      <button class="cam-btn" data-cam="pulley" aria-pressed="false" title="Acercar a la polea y las pesas (tecla 3)">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="5" r="3.3"/><path d="M10.3 5v5"/><rect x="8.3" y="10" width="4" height="4.5" rx=".8"/></svg>
-        <span class="lbl">Polea y pesas</span></button>
+    <main id="stage" aria-label="Montaje experimental en 3D">
+      <canvas id="gl" aria-label="Vista 3D del experimento de Melde" tabindex="0"></canvas>
+      <div class="ov hud-tl">
+        <div class="status" id="status" data-state="res">
+          <div class="st-row" role="status" aria-live="polite"><span class="dot"></span><span id="status-txt">En resonancia</span><span class="sn" id="status-n">n = 2</span></div>
+          <div class="eq-live" id="eq-live" aria-hidden="true"></div>
+        </div>
+      </div>
+      <button class="help-fab" id="btn-help" type="button" aria-haspopup="dialog" title="Ecuaciones del modelo y atajos de teclado">? Teórico</button>
+      <div class="loader" id="loader">
+        <div class="ld">
+          <svg width="120" height="40" viewBox="0 0 120 40" fill="none"><path d="M4 20c14-22 42-22 56 0s42 22 56 0" stroke="#10B981" stroke-width="1.5" stroke-linecap="round"/><path d="M4 20c14 22 42 22 56 0s42-22 56 0" stroke="#4B5563" stroke-width="1" stroke-linecap="round"/></svg>
+          <span class="ld-txt">Preparando el laboratorio…</span>
+        </div>
+      </div>
+    </main>
+
+    <div class="toolbar time-dock" role="toolbar" aria-label="Control de tiempo">
+      <span class="tb-label">Tiempo</span>
+      <div class="seg" role="group" aria-label="Velocidad de simulación" id="speed-seg">
+        <button data-speed="1" aria-pressed="true" title="Tiempo real">1.0×</button>
+        <button data-speed="0.25" aria-pressed="false" title="Cámara lenta ×4">0.25×</button>
+        <button data-speed="0.1" aria-pressed="false" title="Cámara lenta ×10">0.1×</button>
+        <button data-speed="strobe" aria-pressed="false" title="Estroboscopio desintonizado 0,5 Hz: la onda se ve en cámara lenta aparente a cualquier frecuencia">Estrobo</button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <div class="seg" role="group" aria-label="Reproducción">
+        <button class="btn play" id="btn-pause" aria-pressed="false" title="Pausar o reanudar (barra espaciadora)">
+          <svg id="ico-pause" width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="3" height="9" rx=".5"/><rect x="7" y="1.5" width="3" height="9" rx=".5"/></svg>
+          <span id="pause-txt">Pausar</span></button>
+        <button class="btn" id="btn-back" disabled title="Retroceder un octavo de período">−T/8</button>
+        <button class="btn" id="btn-fwd" disabled title="Avanzar un octavo de período">+T/8</button>
+      </div>
+      <span class="tb-fill"></span>
+      <span class="tread" id="tread"><span class="v">t</span> = <b id="t-read">0.0000</b> s</span>
     </div>
 
-    <div class="bottom-bar">
-      <section class="scope glass" aria-label="Osciloscopio espacial">
-        <div class="scope-head">
-          <h3>Osciloscopio espacial <span style="color:var(--mute);font-weight:500">y(x, t)</span></h3>
+    <div class="bay bottom-bar">
+      <section class="bay-pane" aria-label="Osciloscopio espacial">
+        <header class="pane-h">
+          <h3>Osciloscopio<span class="sub">y(x, t)</span></h3>
           <div class="legend">
-            <span><i style="--c:var(--cyan)"></i>onda instantánea</span>
-            <span><i style="--c:var(--emerald)"></i>envolvente</span>
-            <span><i class="dot" style="--c:var(--rose)"></i>nodo</span>
-            <span><i class="dot" style="--c:var(--amber)"></i>antinodo</span>
+            <span><i style="--c:#0EA5E9"></i>instantánea</span>
+            <span><i style="--c:#10B981"></i>envolvente</span>
+            <span><i class="dot" style="--c:#FF6F8E"></i>nodo</span>
+            <span><i class="dot" style="--c:#FFC56B"></i>antinodo</span>
           </div>
-        </div>
-        <canvas id="scope-cv"></canvas>
+        </header>
+        <div class="plot"><canvas id="scope-cv"></canvas></div>
       </section>
-
-      <section class="time-dock glass" aria-label="Control de tiempo y visualización">
-        <div class="row">
-          <div class="seg" role="group" aria-label="Velocidad de simulación" id="speed-seg">
-            <button data-speed="1" aria-pressed="true" title="Tiempo real">1.0×</button>
-            <button data-speed="0.25" aria-pressed="false" title="Cámara lenta ×4">0.25×</button>
-            <button data-speed="0.1" aria-pressed="false" title="Cámara lenta ×10">0.1×</button>
-            <button data-speed="strobe" aria-pressed="false" title="Estroboscopio desintonizado 0,5 Hz: la onda se ve en cámara lenta aparente a cualquier frecuencia">Estrobo</button>
+      <section class="bay-pane" aria-labelledby="h-spec">
+        <header class="pane-h">
+          <h3 id="h-spec">Curva de resonancia</h3>
+          <div class="seg sm" role="group" aria-label="Rango de la curva">
+            <button data-spec="zoom" aria-pressed="true">Lorentziana</button>
+            <button data-spec="global" aria-pressed="false">1–200 Hz</button>
           </div>
-        </div>
-        <div class="row">
-          <button class="btn play" id="btn-pause" aria-pressed="false" title="Pausar o reanudar (barra espaciadora)">
-            <svg id="ico-pause" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="3" height="9" rx=".8"/><rect x="7" y="1.5" width="3" height="9" rx=".8"/></svg>
-            <span id="pause-txt">Pausar</span></button>
-          <button class="btn" id="btn-back" disabled title="Retroceder un octavo de período">−T/8</button>
-          <button class="btn" id="btn-fwd" disabled title="Avanzar un octavo de período">+T/8</button>
-          <span class="tread" id="tread"><span class="v">t</span> = <b id="t-read">0.0000</b> s</span>
-        </div>
-        <div class="row">
-          <button class="tog" data-tog="markers" aria-pressed="true" title="Esferas en nodos y antinodos (M)"><span class="sw"></span>Nodos y antinodos</button>
-          <button class="tog" data-tog="vectors" aria-pressed="true" title="Vectores de tensión, peso y velocidad (V)"><span class="sw"></span>Vectores</button>
-          <button class="tog" data-tog="envelope" aria-pressed="true" title="Envolvente estroboscópica (E)"><span class="sw"></span>Envolvente</button>
-          <span class="fps" id="fps"></span>
-          <button class="qbtn" id="btn-q" data-q="alta" title="Calidad gráfica: alta usa brillo, sombras y suavizado; ligera prioriza la fluidez en equipos modestos">Calidad alta</button>
-        </div>
+        </header>
+        <div class="plot"><canvas id="spec-cv" title="Haz clic o arrastra para fijar la frecuencia" aria-label="Amplitud de la respuesta en función de la frecuencia"></canvas></div>
       </section>
     </div>
-
-    <div class="loader" id="loader">
-      <div class="ld">
-        <svg width="120" height="40" viewBox="0 0 120 40" fill="none"><path d="M4 20c14-22 42-22 56 0s42 22 56 0" stroke="#2EE6A6" stroke-width="2.5" stroke-linecap="round"/><path d="M4 20c14 22 42 22 56 0s42-22 56 0" stroke="#2EE6A6" stroke-opacity=".35" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <span class="ld-txt">Preparando el laboratorio…</span>
-      </div>
-    </div>
-  </main>
+  </div>
 
   <div class="side-wrap">
-  <!-- ===================== PANEL IZQUIERDO ===================== -->
-  <aside id="panel-left" class="panel" aria-label="Parámetros y diagnóstico">
-    <header class="brand">
-      <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
-        <rect x=".5" y=".5" width="41" height="41" rx="11" fill="rgba(46,230,166,.08)" stroke="rgba(46,230,166,.35)"/>
-        <path d="M6 21c3.8-11 11.2-11 15 0s11.2 11 15 0" fill="none" stroke="#2EE6A6" stroke-width="2.2" stroke-linecap="round"/>
-        <path d="M6 21c3.8 11 11.2 11 15 0s11.2-11 15 0" fill="none" stroke="#2EE6A6" stroke-opacity=".4" stroke-width="1.4" stroke-linecap="round"/>
-        <circle cx="6" cy="21" r="2" fill="#FF6F8E"/><circle cx="21" cy="21" r="2" fill="#FF6F8E"/><circle cx="36" cy="21" r="2" fill="#FF6F8E"/>
-      </svg>
-      <div>
-        <h1>Experimento de Melde</h1>
-        <p>Ondas estacionarias en una cuerda tensa con peso agregado. Fluidos, Ondas y Luz.</p>
-      </div>
+  <!-- ===================== PANEL IZQUIERDO: CONTROLES ===================== -->
+  <aside id="panel-left" class="dock" aria-label="Controles y diagnóstico">
+    <header class="dock-title">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8c2-5.5 4.5-5.5 6.5 0s4.5 5.5 6.5 0" fill="none" stroke="#10B981" stroke-width="1.5"/><path d="M1.5 8c2 5.5 4.5 5.5 6.5 0s4.5-5.5 6.5 0" fill="none" stroke="#4B5563" stroke-width="1"/></svg>
+      <h1>Experimento de Melde</h1>
     </header>
 
-    <section class="card" aria-labelledby="h-params">
-      <h2 id="h-params" title="Arrastra el control o escribe el valor exacto; los cambios se aplican en tiempo real">Parámetros del montaje</h2>
-
-      <div class="ctrl" style="--acc:var(--cyan)">
+    <section class="sec" aria-labelledby="h-params">
+      <h2 class="sec-h" id="h-params">Generador</h2>
+      <div class="ctrl">
         <div class="ctrl-head">
-          <label for="num-f"><span class="v">f</span>Frecuencia</label>
+          <label for="num-f">Frecuencia <span class="v">f</span></label>
           <div class="num-wrap"><input class="num" id="num-f" type="number" min="1" max="200" step="0.1" inputmode="decimal" aria-label="Frecuencia en hertz" /><span class="unit">Hz</span></div>
         </div>
         <input class="range" id="rng-f" type="range" min="1" max="200" step="0.1" aria-label="Frecuencia" />
-        <div class="ctrl-foot"><span><span class="v">ω</span> = 2π<span class="v">f</span> = <b id="o-omega">—</b> rad/s</span><span>período <b id="o-period">—</b> ms</span></div>
-      </div>
-
-      <div class="ctrl" style="--acc:var(--orange)">
-        <div class="ctrl-head">
-          <label for="num-m"><span class="v">m</span>Masa colgante</label>
-          <div class="num-wrap"><input class="num" id="num-m" type="number" min="0.02" max="5" step="0.01" inputmode="decimal" aria-label="Masa en kilogramos" /><span class="unit">kg</span></div>
-        </div>
-        <input class="range" id="rng-m" type="range" min="0.02" max="5" step="0.01" aria-label="Masa colgante" />
-        <div class="ctrl-foot big"><span>Tensión <span class="v">T</span> = <span class="v">m g</span></span><span><b id="o-T">—</b> N</span></div>
-        <div class="chips" id="disc-chips" aria-label="Discos sobre el portapesas"></div>
-      </div>
-
-      <div class="ctrl" style="--acc:var(--violet)">
-        <div class="ctrl-head">
-          <label for="num-L"><span class="v">L</span>Longitud vibrante</label>
-          <div class="num-wrap"><input class="num" id="num-L" type="number" min="0.4" max="3" step="0.05" inputmode="decimal" aria-label="Longitud en metros" /><span class="unit">m</span></div>
-        </div>
-        <input class="range" id="rng-L" type="range" min="0.4" max="3" step="0.05" aria-label="Longitud vibrante" />
-        <div class="ctrl-foot"><span>del excitador a la polea</span><span><span class="v">f</span><sub>1</sub> = <b id="o-f1">—</b> Hz</span></div>
-      </div>
-
-      <div class="ctrl" style="--acc:var(--steel)">
-        <div class="ctrl-head">
-          <label for="num-mu"><span class="v">μ</span>Densidad lineal</label>
-          <div class="num-wrap"><input class="num" id="num-mu" type="number" min="0.05" max="20" step="0.001" inputmode="decimal" aria-label="Densidad lineal en gramos por metro" /><span class="unit">g/m</span></div>
-        </div>
-        <div class="ctrl-foot" style="margin-top:0"><span>en unidades SI</span><span><b id="o-mu">—</b> kg/m</span></div>
-        <div class="mats" id="mats" role="group" aria-label="Materiales de cuerda"></div>
       </div>
     </section>
 
-    <section class="card diag" id="diag" data-state="res" aria-labelledby="h-diag">
-      <div class="card-head">
-        <h2 id="h-diag">Diagnóstico</h2>
-        <span class="state-pill" id="d-state">En resonancia</span>
+    <section class="sec" aria-labelledby="h-load">
+      <h2 class="sec-h" id="h-load">Carga</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-m">Masa colgante <span class="v">m</span></label>
+          <div class="num-wrap"><input class="num" id="num-m" type="number" min="0.02" max="5" step="0.01" inputmode="decimal" aria-label="Masa en kilogramos" /><span class="unit">kg</span></div>
+        </div>
+        <input class="range" id="rng-m" type="range" min="0.02" max="5" step="0.01" aria-label="Masa colgante" />
+        <div class="kv"><span>Tensión <span class="v">T</span></span><span class="val"><b id="o-T">—</b> N</span></div>
       </div>
-      <div class="diag-top">
+    </section>
+
+    <section class="sec" aria-labelledby="h-string">
+      <h2 class="sec-h" id="h-string">Cuerda</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-L">Longitud <span class="v">L</span></label>
+          <div class="num-wrap"><input class="num" id="num-L" type="number" min="0.4" max="3" step="0.05" inputmode="decimal" aria-label="Longitud en metros" /><span class="unit">m</span></div>
+        </div>
+        <input class="range" id="rng-L" type="range" min="0.4" max="3" step="0.05" aria-label="Longitud vibrante" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-mu">Densidad <span class="v">μ</span></label>
+          <div class="num-wrap"><input class="num" id="num-mu" type="number" min="0.05" max="20" step="0.001" inputmode="decimal" aria-label="Densidad lineal en gramos por metro" /><span class="unit">g/m</span></div>
+        </div>
+        <div class="pick">
+          <button class="pick-btn" id="mat-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mats">
+            <span class="pk-l">Material</span><span id="mat-name">Cuerda trenzada estándar</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3.5 5 6.5 8 3.5"/></svg>
+          </button>
+          <div class="mats" id="mats" role="group" aria-label="Materiales de cuerda" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec diag" id="diag" data-state="res" aria-labelledby="h-diag">
+      <div class="sec-head">
+        <h2 class="sec-h" id="h-diag">Diagnóstico</h2>
+        <span class="state" id="d-state">En resonancia</span>
+      </div>
+      <div class="readout">
         <div class="loops"><span class="loops-n" id="d-n">2</span><span class="loops-cap" id="d-n-cap">barrigas, 3 nodos</span></div>
-        <div class="glyph-wrap"><canvas id="d-glyph" aria-hidden="true"></canvas></div>
+        <canvas id="d-glyph" aria-hidden="true"></canvas>
       </div>
       <div class="meter-row">
-        <div class="meter" title="Amplitud relativa; la línea marca el umbral de resonancia (85 %)"><i id="d-meter"></i></div>
+        <div class="meter" title="Amplitud relativa; la marca indica el umbral de resonancia (85 %)"><i id="d-meter"></i></div>
         <span class="meter-val"><span class="v">A</span>/<span class="v">A</span><sub>0</sub> <b id="d-amp">0 %</b></span>
       </div>
-      <dl class="dl">
-        <dt>Armónico más cercano</dt><dd id="d-near">—</dd>
-        <dt>Desintonía Δ<span class="v">f</span></dt><dd id="d-detune">—</dd>
-        <dt>Semiancho de línea <span class="v">γ</span></dt><dd id="d-gamma">—</dd>
-        <dt><span class="v">n</span> efectivo = 2<span class="v">Lf</span>/<span class="v">v</span></dt><dd id="d-neff">—</dd>
-      </dl>
       <button class="btn-primary" id="btn-auto" title="Sintoniza la frecuencia exacta del armónico más cercano (tecla R)">
-        <span style="display:flex;align-items:center;gap:9px">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 10c2-6 4-6 6 0s4 6 6 0 3-4 4-4"/><circle cx="10" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>
-          Auto-resonar</span>
+        <span class="ba"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 10c2-6 4-6 6 0s4 6 6 0 3-4 4-4"/></svg>Auto-resonar</span>
         <span class="sub" id="btn-auto-sub">—</span>
       </button>
     </section>
   </aside>
 
-  <!-- ===================== PANEL DERECHO ===================== -->
-  <aside id="panel-right" class="panel" aria-label="Modos normales y telemetría">
-    <section class="card" aria-labelledby="h-modes">
-      <h2 id="h-modes">Modos normales</h2>
-      <p class="meta" id="modes-meta">—</p>
-      <div class="table-wrap"><table class="modes" aria-describedby="modes-note">
-        <thead><tr><th><span class="v">n</span></th><th><span class="v">λ</span><sub>n</sub> (m)</th><th><span class="v">f</span><sub>n</sub> (Hz)</th><th><span class="v">m</span> a esta <span class="v">f</span></th><th>Respuesta</th></tr></thead>
-        <tbody id="modes-body"></tbody>
-      </table></div>
-      <p class="foot-note" id="modes-note">Pulsa una fila para aplicar su frecuencia. Pulsa la masa para fijar el peso que produce ese modo con la frecuencia actual (ley de Melde: <span class="v">m</span><sub>n</sub> = <span class="v">m</span><sub>1</sub>/<span class="v">n</span>²).</p>
-    </section>
+  <!-- ===================== PANEL DERECHO: PESTAÑAS ===================== -->
+  <aside id="panel-right" class="dock" aria-label="Datos del experimento">
+    <div class="tabs" role="tablist" aria-label="Datos del experimento">
+      <button role="tab" id="tab-params" aria-selected="false" aria-controls="pane-params" tabindex="-1">Parámetros</button>
+      <button role="tab" id="tab-modes" aria-selected="true" aria-controls="pane-modes" tabindex="0">Modos (<span class="v">n</span>)</button>
+      <button role="tab" id="tab-tel" aria-selected="false" aria-controls="pane-tel" tabindex="-1">Telemetría</button>
+    </div>
 
-    <section class="card" aria-labelledby="h-spec">
-      <div class="card-head">
-        <h2 id="h-spec">Curva de resonancia</h2>
-        <div class="seg" role="group" aria-label="Rango de la curva">
-          <button data-spec="zoom" aria-pressed="true">Lorentziana</button>
-          <button data-spec="global" aria-pressed="false">1–200 Hz</button>
-        </div>
-      </div>
-      <p class="lede" style="margin-bottom:8px">Haz clic o arrastra sobre la gráfica para fijar la frecuencia.</p>
-      <canvas id="spec-cv" aria-label="Amplitud de la respuesta en función de la frecuencia"></canvas>
-      <p class="spec-cap" id="spec-cap">—</p>
-    </section>
-
-    <section class="card" aria-labelledby="h-tel">
-      <h2 id="h-tel" style="margin-bottom:10px">Telemetría</h2>
-      <dl class="kpis">
-        <div class="kpi"><dt>Tensión <span class="v">T</span></dt><dd><span id="k-T">—</span><small>N</small></dd></div>
-        <div class="kpi"><dt>Velocidad <span class="v">v</span></dt><dd><span id="k-v">—</span><small>m/s</small></dd></div>
-        <div class="kpi"><dt>Fundamental <span class="v">f</span><sub>1</sub></dt><dd><span id="k-f1">—</span><small>Hz</small></dd></div>
-        <div class="kpi"><dt>Longitud de onda <span class="v">λ</span></dt><dd><span id="k-lam">—</span><small>m</small></dd></div>
-        <div class="kpi"><dt>Número de onda <span class="v">k</span></dt><dd><span id="k-k">—</span><small>rad/m</small></dd></div>
-        <div class="kpi"><dt>Frec. angular <span class="v">ω</span></dt><dd><span id="k-w">—</span><small>rad/s</small></dd></div>
-        <div class="kpi"><dt>Factor de calidad <span class="v">Q</span><sub>n</sub></dt><dd><span id="k-Q">—</span></dd></div>
-        <div class="kpi"><dt>Ancho de línea 2<span class="v">γ</span></dt><dd><span id="k-fw">—</span><small>Hz</small></dd></div>
+    <section class="pane" role="tabpanel" id="pane-params" aria-labelledby="tab-params" hidden>
+      <dl class="sheet">
+        <div><dt>Tensión <span class="v">T</span></dt><dd><span id="k-T">—</span><small>N</small></dd></div>
+        <div><dt>Velocidad <span class="v">v</span></dt><dd><span id="k-v">—</span><small>m/s</small></dd></div>
+        <div><dt>Fundamental <span class="v">f</span><sub>1</sub></dt><dd><span id="k-f1">—</span><small>Hz</small></dd></div>
+        <div><dt>Densidad <span class="v">μ</span></dt><dd><span id="o-mu">—</span><small>kg/m</small></dd></div>
+        <div><dt>Calidad <span class="v">Q</span><sub>n</sub></dt><dd><span id="k-Q">—</span></dd></div>
+        <div><dt>Ancho de línea 2<span class="v">γ</span></dt><dd><span id="k-fw">—</span><small>Hz</small></dd></div>
+        <div class="chips-row"><dt>Discos en el portapesas</dt><div class="chips" id="disc-chips" aria-label="Discos sobre el portapesas"></div></div>
       </dl>
     </section>
 
-    <section class="card" aria-labelledby="h-model">
-      <h2 id="h-model" style="margin-bottom:10px">Modelo físico</h2>
-      <ul class="eqs">
-        <li><span class="eq">T = m g</span><small>tensión que impone el peso colgante, con g = 9,81 m/s²</small></li>
-        <li><span class="eq">v = <span class="sqrt"><span><span class="frac"><span>T</span><span>μ</span></span></span></span></span><small>velocidad de propagación en la cuerda</small></li>
-        <li><span class="eq">f<sub>n</sub> = <span class="frac"><span>n</span><span>2L</span></span><span class="sqrt"><span><span class="frac"><span>T</span><span>μ</span></span></span></span></span><small>n barrigas, n + 1 nodos y λ<sub>n</sub> = 2L/n</small></li>
-        <li><span class="eq">y(x,t) = A(f) <span class="up">sin</span>(nπx/L) <span class="up">cos</span>(ωt)</span><small>modo estacionario con extremos fijos</small></li>
-        <li><span class="eq">A(f) = A<sub>0</sub> <span class="frac"><span>γ</span><span><span class="sqrt" style="font-size:1em"><span>(f − f<sub>n</sub>)² + γ²</span></span></span></span></span><small>respuesta lorentziana; fuera de resonancia se suma una componente viajera transitoria</small></li>
-      </ul>
-      <div class="keys" style="margin-top:12px">
-        <span><kbd>Espacio</kbd>pausa</span><span><kbd>R</kbd>auto-resonar</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>±0,1 Hz</span><span><kbd>↑</kbd><kbd>↓</kbd>armónico</span><span><kbd>M</kbd><kbd>V</kbd><kbd>E</kbd>capas</span>
-      </div>
+    <section class="pane" role="tabpanel" id="pane-modes" aria-labelledby="tab-modes">
+      <h2 class="sr-only" id="h-modes">Modos normales</h2>
+      <div class="table-wrap"><table class="modes" aria-describedby="modes-note">
+        <thead><tr>
+          <th scope="col"><span class="v">n</span></th>
+          <th scope="col"><span class="v">λ</span><sub>n</sub> (m)</th>
+          <th scope="col"><span class="v">f</span><sub>n</sub> (Hz)</th>
+          <th scope="col" title="Masa que produce el modo n con la frecuencia actual (ley de Melde)"><span class="v">m</span><sub>n</sub> (kg)</th>
+          <th scope="col" title="Respuesta de cada modo a la frecuencia actual"><span class="v">A</span>/<span class="v">A</span><sub>0</sub></th>
+        </tr></thead>
+        <tbody id="modes-body"></tbody>
+      </table></div>
+      <p class="sr-only" id="modes-note">Una fila aplica su frecuencia; el botón de masa fija el peso que produce ese modo con la frecuencia actual.</p>
+    </section>
+
+    <section class="pane" role="tabpanel" id="pane-tel" aria-labelledby="tab-tel" hidden>
+      <h2 class="sr-only" id="h-tel">Telemetría</h2>
+      <dl class="sheet">
+        <div><dt>Frecuencia angular <span class="v">ω</span></dt><dd><span id="k-w">—</span><small>rad/s</small></dd></div>
+        <div><dt>Período</dt><dd><span id="o-period">—</span><small>ms</small></dd></div>
+        <div><dt>Longitud de onda <span class="v">λ</span></dt><dd><span id="k-lam">—</span><small>m</small></dd></div>
+        <div><dt>Número de onda <span class="v">k</span></dt><dd><span id="k-k">—</span><small>rad/m</small></dd></div>
+        <div><dt>Armónico cercano</dt><dd id="d-near">—</dd></div>
+        <div><dt>Desintonía Δ<span class="v">f</span></dt><dd id="d-detune">—</dd></div>
+        <div><dt><span class="v">n</span> efectivo</dt><dd id="d-neff">—</dd></div>
+      </dl>
     </section>
   </aside>
   </div>
+
+  <!-- Valores que ya se muestran en otro lugar; el código los sigue actualizando -->
+  <div class="sink" hidden aria-hidden="true">
+    <b id="o-omega"></b><b id="o-f1"></b><span id="d-gamma"></span><p id="modes-meta"></p><p id="spec-cap"></p><div class="hint" id="hint-2d"></div>
+  </div>
 </div>
+
+<!-- ===================== AYUDA TEÓRICA ===================== -->
+<dialog class="help" id="help-dlg" aria-labelledby="h-model">
+  <div class="help-h">
+    <h2 id="h-model">Ayuda teórica</h2>
+    <button class="help-x" id="help-close" type="button" aria-label="Cerrar ayuda"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.4"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button>
+  </div>
+  <div class="help-b">
+    <dl class="eqs">
+      <dt>T = m g</dt><dd>Tensión que impone el peso colgante (g = 9,81 m/s²)</dd>
+      <dt>v = <span class="sqrt"><span><span class="frac"><span>T</span><span>μ</span></span></span></span></dt><dd>Velocidad de propagación en la cuerda</dd>
+      <dt>f<sub>n</sub> = <span class="frac"><span>n</span><span>2L</span></span><span class="sqrt"><span><span class="frac"><span>T</span><span>μ</span></span></span></span></dt><dd>Armónicos: n barrigas, n + 1 nodos, λ<sub>n</sub> = 2L/n</dd>
+      <dt>y = A <span class="up">sin</span>(nπx/L) <span class="up">cos</span>(ωt)</dt><dd>Modo estacionario con extremos fijos</dd>
+      <dt>A(f) = A<sub>0</sub> <span class="frac"><span>γ</span><span><span class="sqrt" style="font-size:1em"><span>(f − f<sub>n</sub>)² + γ²</span></span></span></span></dt><dd>Respuesta lorentziana; fuera de resonancia se suma una componente viajera transitoria</dd>
+      <dt>m<sub>n</sub> = m<sub>1</sub>/n²</dt><dd>Ley de Melde: masa que da n barrigas con f fija</dd>
+    </dl>
+    <div class="keys">
+      <span><kbd>Espacio</kbd>pausa</span><span><kbd>R</kbd>auto-resonar</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>±0,1 Hz</span><span><kbd>↑</kbd><kbd>↓</kbd>armónico</span><span><kbd>M</kbd><kbd>V</kbd><kbd>E</kbd>capas</span>
+    </div>
+  </div>
+</dialog>
 
 <script>
   // Aviso si la librería 3D no llega (sin conexión o CDN bloqueada).
@@ -1509,7 +1548,8 @@ function bindControls() {
   for (const mt of MATERIALS) {
     const b = document.createElement('button');
     b.className = 'mat'; b.dataset.mu = mt.mu; b.setAttribute('aria-pressed', 'false');
-    b.innerHTML = `<b>${mt.name}</b><span>${mt.detail}, ${mt.mu.toFixed(3)} g/m</span>`;
+    b.innerHTML = `<b>${mt.name}</b><span>${mt.mu.toFixed(3)} g/m</span>`;
+    b.title = `${mt.name}, ${mt.detail}: μ = ${mt.mu.toFixed(3)} g/m`;
     b.addEventListener('click', () => setParam('mu', mt.mu, 'ui'));
     mats.appendChild(b);
   }
@@ -1555,6 +1595,33 @@ function bindControls() {
 
   window.addEventListener('keydown', onKey);
 }
+// Elementos de interfaz: pestañas del panel derecho, selector de material y ayuda teórica
+function bindChrome() {
+  const btn = $('#mat-btn'), list = $('#mats');
+  const openList = (v) => { list.hidden = !v; btn.setAttribute('aria-expanded', String(v)); };
+  btn.addEventListener('click', (e) => { e.stopPropagation(); openList(list.hidden); });
+  list.addEventListener('click', (e) => { if (e.target.closest('.mat')) { openList(false); btn.focus(); } });
+  document.addEventListener('click', (e) => { if (!list.hidden && !e.target.closest('.pick')) openList(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !list.hidden) { e.preventDefault(); openList(false); btn.focus(); } });
+  const tabs = $$('[role="tab"]');
+  const select = (tab) => tabs.forEach((x) => {
+    const on = x === tab; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+    $('#' + x.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      select(next); next.focus();
+    });
+  });
+  const dlg = $('#help-dlg');
+  $('#btn-help').addEventListener('click', () => dlg.showModal());
+  $('#help-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
 function autoResonate() { const t = autoTarget(); if (t) sweepTo('f', t.f); }
 function setSpeed(v) {
   if (v === 'strobe') { S.strobe = true; }
@@ -1580,7 +1647,9 @@ function toggleLayer(k) {
   $$(`.tog[data-tog="${k}"]`).forEach((b) => b.setAttribute('aria-pressed', String(S[k])));
 }
 function onKey(e) {
+  if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
   const t = e.target, tag = t.tagName;
+  if (t.getAttribute && t.getAttribute('role') === 'tab') return;
   if (tag === 'INPUT' && t.type !== 'range') return;
   if (tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (t.type === 'range' && e.key.startsWith('Arrow')) return;
@@ -1619,6 +1688,8 @@ function updatePanels() {
   $('#o-f1').textContent = P.f1.toFixed(2);
   $('#o-mu').textContent = P.muKg.toFixed(6);
   $$('.mat').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(parseFloat(b.dataset.mu) - S.mu) < 1e-6)));
+  const matNow = MATERIALS.find((mt) => Math.abs(mt.mu - S.mu) < 1e-6);
+  $('#mat-name').textContent = matNow ? matNow.name : 'Personalizado';
 
   // diagnóstico
   const st = P.state;
@@ -1653,7 +1724,7 @@ function updatePanels() {
     tr.querySelector('.fn').textContent = fn.toFixed(2);
     const pill = tr.querySelector('.mpill'), okM = mn >= LIM.m[0] && mn <= LIM.m[1];
     pill.disabled = !okM;
-    pill.textContent = okM ? trimTo(mn, 4, 3) + ' kg' : 'fuera de rango';
+    pill.textContent = okM ? trimTo(mn, 4, 3) : '—';
     pill.title = okM ? `Fijar m = ${mn.toFixed(4)} kg para obtener ${n} barrigas a ${S.f.toFixed(2)} Hz` : 'La masa necesaria está fuera del intervalo 0,02–5 kg';
     tr.querySelector('.rbar i').style.width = (lorentz(S.f, fn) * 100).toFixed(1) + '%';
     tr.title = out ? 'Frecuencia fuera del rango del generador' : `Aplicar f${sub(n)} = ${fn.toFixed(2)} Hz`;
@@ -1695,56 +1766,55 @@ function rulerStep(L) {
   for (const s of [0.05, 0.1, 0.2, 0.25, 0.5]) if (L / s <= 10.0001) return s;
   return 0.5;
 }
+// Paleta de instrumentación para las gráficas 2D (la escena 3D conserva la suya)
+const UI = {
+  grid: 'rgba(255,255,255,0.04)', gridMajor: 'rgba(255,255,255,0.08)', frame: '#2A303C', tick: '#3A4150',
+  label: '#6E7681', text: '#8B949E', trace: '#0EA5E9', ok: '#10B981', off: '#6E7681', accent: '#F59E0B',
+  node: '#FF6F8E', anti: '#FFC56B', bg: '#0B0E13',
+  font: (px, w = 400) => `${w} ${px}px "JetBrains Mono", ui-monospace, Consolas, monospace`,
+};
+const crisp = (v) => Math.round(v) + 0.5;
 function drawScope() {
   const { g, w: W, h: H } = scope;
   if (W < 10) return;
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
   g.clearRect(0, 0, W, H);
-  const pl = 36, pr = 12, pt = 8, pb = 24, pw = W - pl - pr, ph = H - pt - pb, y0 = pt + ph / 2;
+  const pl = 38, pr = 10, pt = 8, pb = 22, pw = W - pl - pr, ph = H - pt - pb, y0 = pt + ph / 2;
   const A0 = P.Avis, ysc = (ph / 2) / (1.18 * A0);
-  const X = (xi) => pl + xi * pw;
-  const L = S.L, step = rulerStep(L), minor = step / 5;
-  // retícula
+  const X = (xi) => pl + xi * pw, Yk = (k) => y0 - k * A0 / 10 * ysc;
+  const L = S.L, step = rulerStep(L), minor = step / 5, nMin = Math.round(L / minor);
   g.lineWidth = 1;
-  for (const a of [-1, -0.5, 0.5, 1]) {
-    const y = Math.round(y0 - a * A0 * ysc) + 0.5;
-    g.strokeStyle = Math.abs(a) === 1 ? 'rgba(150,172,210,.14)' : 'rgba(150,172,210,.07)';
-    g.setLineDash(Math.abs(a) === 1 ? [3, 4] : []);
-    g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + pw, y); g.stroke();
-  }
-  g.setLineDash([]);
-  g.strokeStyle = 'rgba(150,172,210,.2)'; g.beginPath(); g.moveTo(pl, Math.round(y0) + 0.5); g.lineTo(pl + pw, Math.round(y0) + 0.5); g.stroke();
-  for (let x = step; x < L - 1e-6; x += step) {
-    const px = Math.round(X(x / L)) + 0.5;
-    g.strokeStyle = 'rgba(150,172,210,.06)'; g.beginPath(); g.moveTo(px, pt); g.lineTo(px, pt + ph); g.stroke();
-  }
-  g.fillStyle = CSS.mute; g.font = '500 10px "IBM Plex Sans", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'middle';
-  g.fillText('+A₀', pl - 6, y0 - A0 * ysc); g.fillText('0', pl - 6, y0); g.fillText('−A₀', pl - 6, y0 + A0 * ysc);
-  // regla graduada (m)
-  const ry = pt + ph + 3;
-  g.strokeStyle = 'rgba(150,172,210,.35)'; g.beginPath(); g.moveTo(pl, ry + 0.5); g.lineTo(pl + pw, ry + 0.5); g.stroke();
-  g.textAlign = 'center'; g.textBaseline = 'top';
-  const nMin = Math.round(L / minor);
+  // retícula milimetrada: menor cada step/5 y A0/10, mayor cada step y A0/2
+  g.strokeStyle = UI.grid; g.beginPath();
+  for (let i = 1; i < nMin; i++) { if (i % 5 === 0) continue; const x = crisp(X(i * minor / L)); g.moveTo(x, pt); g.lineTo(x, pt + ph); }
+  for (let k = -11; k <= 11; k++) { if (k % 5 === 0) continue; const y = crisp(Yk(k)); g.moveTo(pl, y); g.lineTo(pl + pw, y); }
+  g.stroke();
+  g.strokeStyle = UI.gridMajor; g.beginPath();
+  for (let x = step; x < L - 1e-6; x += step) { const xx = crisp(X(x / L)); g.moveTo(xx, pt); g.lineTo(xx, pt + ph); }
+  for (const k of [-10, -5, 0, 5, 10]) { const y = crisp(Yk(k)); g.moveTo(pl, y); g.lineTo(pl + pw, y); }
+  g.stroke();
+  g.strokeStyle = UI.frame; g.strokeRect(crisp(pl), crisp(pt), Math.round(pw), Math.round(ph));
+  g.fillStyle = UI.label; g.font = UI.font(9.5); g.textAlign = 'right'; g.textBaseline = 'middle';
+  g.fillText('+A₀', pl - 5, Yk(10)); g.fillText('0', pl - 5, y0); g.fillText('−A₀', pl - 5, Yk(-10));
+  // regla graduada en metros
+  const ry = Math.round(pt + ph);
+  g.strokeStyle = UI.tick; g.beginPath();
   for (let i = 0; i <= nMin; i++) {
     const x = i * minor; if (x > L + 1e-6) break;
-    const major = Math.abs(x / step - Math.round(x / step)) < 1e-6;
-    const px = Math.round(X(x / L)) + 0.5;
-    g.strokeStyle = major ? 'rgba(150,172,210,.6)' : 'rgba(150,172,210,.28)';
-    g.beginPath(); g.moveTo(px, ry); g.lineTo(px, ry + (major ? 6 : 3)); g.stroke();
-    if (major) g.fillText(x.toFixed(step < 0.1 ? 2 : 1), px, ry + 8);
+    const major = Math.abs(x / step - Math.round(x / step)) < 1e-6, xx = crisp(X(x / L));
+    g.moveTo(xx, ry); g.lineTo(xx, ry + (major ? 5 : 2.5));
   }
-  g.textAlign = 'right'; g.fillText('x (m)', pl - 6, ry + 8);
-  // datos
+  g.stroke();
+  g.textBaseline = 'top';
+  for (let i = 0, nM = Math.round(L / step); i <= nM; i++) {
+    g.textAlign = i === 0 ? 'left' : i === nM ? 'right' : 'center';
+    g.fillText((i * step).toFixed(step < 0.1 ? 2 : 1), X(i * step / L), ry + 7);
+  }
+  g.textAlign = 'right'; g.fillText('m', pl - 5, ry + 7);
+  // envolvente y onda instantánea: trazos nítidos sin relleno
   const stepI = Math.max(1, Math.floor(NS / pw));
-  const col = mixCss(CSS.off, CSS.emerald, glow);
   if (S.envelope) {
-    g.beginPath();
-    for (let i = 0; i <= NS; i += stepI) g.lineTo(X(i / NS), y0 - env[i] * ysc);
-    g.lineTo(X(1), y0 - env[NS] * ysc);
-    for (let i = NS; i >= 0; i -= stepI) g.lineTo(X(i / NS), y0 + env[i] * ysc);
-    g.lineTo(X(0), y0 + env[0] * ysc);
-    g.closePath(); g.fillStyle = mixCss(CSS.off, CSS.emerald, glow, 0.13); g.fill();
-    g.strokeStyle = col; g.lineWidth = 1.2;
+    g.strokeStyle = mixCss(UI.off, UI.ok, glow); g.lineWidth = 1;
     for (const sg of [1, -1]) {
       g.beginPath();
       for (let i = 0; i <= NS; i += stepI) g.lineTo(X(i / NS), y0 - sg * env[i] * ysc);
@@ -1755,22 +1825,22 @@ function drawScope() {
   g.beginPath();
   for (let i = 0; i <= NS; i += stepI) g.lineTo(X(i / NS), y0 - (ys[i] - YS) * ysc);
   g.lineTo(X(1), y0 - (ys[NS] - YS) * ysc);
-  g.lineJoin = 'round';
-  g.strokeStyle = 'rgba(98,201,255,.22)'; g.lineWidth = 6; g.stroke();   // halo
-  g.strokeStyle = CSS.cyan; g.lineWidth = 2; g.stroke();
+  g.lineJoin = 'round'; g.strokeStyle = UI.trace; g.lineWidth = 1.5; g.stroke();
   if (S.markers && markerA > 0.02 && P.nNear <= 40) {
     const n = P.nNear;
     g.globalAlpha = markerA;
-    for (let j = 0; j <= n; j++) { g.beginPath(); g.arc(X(j / n), y0, 3.6, 0, Math.PI * 2); g.fillStyle = CSS.rose; g.fill(); }
+    g.fillStyle = UI.node;
+    for (let j = 0; j <= n; j++) { g.beginPath(); g.arc(X(j / n), y0, 2.6, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = UI.anti;
     for (let j = 0; j < n; j++) {
       const xi = (j + 0.5) / n, e = envAt(xi);
-      for (const sg of [1, -1]) { g.beginPath(); g.arc(X(xi), y0 - sg * e * ysc, 3.2, 0, Math.PI * 2); g.fillStyle = CSS.amber; g.fill(); }
+      for (const sg of [1, -1]) { g.beginPath(); g.arc(X(xi), y0 - sg * e * ysc, 2.4, 0, Math.PI * 2); g.fill(); }
     }
     if (n <= 12) {
-      g.fillStyle = 'rgba(230,237,247,.75)'; g.font = '600 9.5px "IBM Plex Sans", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'bottom';
-      for (let j = 0; j < n; j++) { const xi = (j + 0.5) / n, e = envAt(xi); g.fillText('A', X(xi), y0 - e * ysc - 6); }
+      g.fillStyle = UI.text; g.font = UI.font(9, 500); g.textAlign = 'center'; g.textBaseline = 'bottom';
+      for (let j = 0; j < n; j++) { const xi = (j + 0.5) / n, e = envAt(xi); g.fillText('A', X(xi), y0 - e * ysc - 5); }
       g.textBaseline = 'top';
-      for (let j = 0; j <= n; j++) g.fillText('N', X(j / n), y0 + 6);
+      for (let j = 0; j <= n; j++) g.fillText('N', X(j / n), y0 + 5);
     }
     g.globalAlpha = 1;
   }
@@ -1784,7 +1854,7 @@ function drawSpectrum() {
   const { g, w: W, h: H } = spec;
   if (W < 10 || !P.f1) return;
   g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, W, H);
-  const pl = spec.pl, pr = spec.pr, pt = 10, pb = 20, pw = W - pl - pr, ph = H - pt - pb;
+  const pl = spec.pl, pr = spec.pr, pt = 8, pb = 18, pw = W - pl - pr, ph = H - pt - pb;
   const zoom = S.spec === 'zoom';
   let fa, fb, nC = P.nNear, fC = P.fNear;
   if (zoom) {
@@ -1795,79 +1865,91 @@ function drawSpectrum() {
   const X = (f) => pl + (f - fa) / (fb - fa) * pw;
   const dbMin = -26;
   const Yv = zoom ? (r) => pt + ph - r / 1.06 * ph : (r) => pt + ph * (Math.max(dbMin, 20 * Math.log10(Math.max(r, 1e-4))) / dbMin);
-  // ejes
-  g.font = '500 10px "IBM Plex Sans", sans-serif'; g.fillStyle = CSS.mute; g.textBaseline = 'middle'; g.textAlign = 'right'; g.lineWidth = 1;
-  const ticks = zoom ? [0, 0.5, 1] : [0, -10, -20];
-  for (const t of ticks) {
-    const y = Math.round(zoom ? Yv(t) : pt + ph * (t / dbMin)) + 0.5;
-    g.strokeStyle = 'rgba(150,172,210,.08)'; g.beginPath(); g.moveTo(pl, y); g.lineTo(pl + pw, y); g.stroke();
-    g.fillText(zoom ? t.toFixed(1) : t + ' dB', pl - 5, y);
-  }
+  const Ydb = (db) => pt + ph * (db / dbMin);
+  g.lineWidth = 1;
+  // retícula milimetrada en unidades físicas
+  const vMinor = [], vMajor = [], hMinor = [], hMajor = [];
   if (zoom) {
-    // banda FWHM y umbral de resonancia
-    const xa = X(fC - P.gamma), xb = X(fC + P.gamma);
-    g.fillStyle = 'rgba(46,230,166,.08)'; g.fillRect(xa, pt, xb - xa, ph);
-    const yT = Yv(0.85) + 0.5;
-    g.setLineDash([3, 4]); g.strokeStyle = 'rgba(46,230,166,.45)'; g.beginPath(); g.moveTo(pl, yT); g.lineTo(pl + pw, yT); g.stroke(); g.setLineDash([]);
-    g.fillStyle = 'rgba(46,230,166,.8)'; g.textAlign = 'right'; g.fillText('umbral 85 %', pl + pw - 2, yT - 7);
+    const d = (fb - fa) / 20;
+    for (let i = 1; i < 20; i++) (i % 5 === 0 ? vMajor : vMinor).push(X(fa + i * d));
+    for (let k = 1; k <= 10; k++) (k % 5 === 0 ? hMajor : hMinor).push(Yv(k / 10));
+  } else {
+    for (let f = 10; f < 200; f += 10) (f % 50 === 0 ? vMajor : vMinor).push(X(f));
+    for (let db = -2; db > dbMin; db -= 2) (db % 10 === 0 ? hMajor : hMinor).push(Ydb(db));
   }
-  // curva
-  g.beginPath();
+  for (const [lines, vertical, style] of [[vMinor, true, UI.grid], [hMinor, false, UI.grid], [vMajor, true, UI.gridMajor], [hMajor, false, UI.gridMajor]]) {
+    g.strokeStyle = style; g.beginPath();
+    for (const p of lines) { const c = crisp(p); if (vertical) { g.moveTo(c, pt); g.lineTo(c, pt + ph); } else { g.moveTo(pl, c); g.lineTo(pl + pw, c); } }
+    g.stroke();
+  }
+  g.strokeStyle = UI.frame; g.strokeRect(crisp(pl), crisp(pt), Math.round(pw), Math.round(ph));
+  g.font = UI.font(9.5); g.fillStyle = UI.label; g.textBaseline = 'middle'; g.textAlign = 'right';
+  if (zoom) for (const t of [0, 0.5, 1]) g.fillText(t.toFixed(1), pl - 5, Yv(t));
+  else { for (const db of [0, -10, -20]) g.fillText(String(db), pl - 5, Ydb(db)); g.textBaseline = 'top'; g.fillText('dB', pl - 5, pt + ph - 10); }
+  if (zoom) {
+    // semiancho ±γ y umbral de resonancia, en líneas discontinuas
+    g.setLineDash([3, 3]);
+    g.strokeStyle = UI.label; g.beginPath();
+    for (const f of [fC - P.gamma, fC + P.gamma]) { const x = crisp(X(f)); g.moveTo(x, pt); g.lineTo(x, pt + ph); }
+    g.stroke();
+    const yT = crisp(Yv(0.85));
+    g.strokeStyle = UI.ok; g.beginPath(); g.moveTo(pl, yT); g.lineTo(pl + pw, yT); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = UI.ok; g.textAlign = 'right'; g.textBaseline = 'bottom'; g.fillText('85 %', pl + pw - 3, yT - 2);
+  }
+  // curva: trazo de 1,5 px sin relleno
   const N = Math.max(60, Math.round(pw));
-  const rows = [];
+  g.beginPath();
   for (let i = 0; i <= N; i++) {
     const f0 = lerp(fa, fb, i / N), f1 = lerp(fa, fb, (i + 1) / N);
     let r = response(Math.max(0.05, f0));
     if (!zoom) { const nA = Math.ceil(f0 / P.f1), nB = Math.floor(f1 / P.f1); if (nB >= nA && nA >= 1) r = Math.max(r, response(nA * P.f1)); }
-    rows.push([X(f0), Yv(r)]);
+    const x = X(f0), y = Yv(r);
+    i ? g.lineTo(x, y) : g.moveTo(x, y);
   }
-  rows.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
-  g.save();
-  g.strokeStyle = CSS.emerald; g.lineWidth = 1.6; g.shadowColor = 'rgba(46,230,166,.6)'; g.shadowBlur = 6; g.stroke();
-  g.restore();
-  g.lineTo(rows[rows.length - 1][0], pt + ph); g.lineTo(rows[0][0], pt + ph); g.closePath();
-  const grad = g.createLinearGradient(0, pt, 0, pt + ph); grad.addColorStop(0, 'rgba(46,230,166,.22)'); grad.addColorStop(1, 'rgba(46,230,166,0)');
-  g.fillStyle = grad; g.fill();
-  // eje x
-  g.textAlign = 'center'; g.textBaseline = 'top'; g.fillStyle = CSS.mute;
+  g.lineJoin = 'round'; g.strokeStyle = UI.trace; g.lineWidth = 1.5; g.stroke();
+  // eje de frecuencia
+  g.font = UI.font(9.5); g.fillStyle = UI.label; g.textAlign = 'center'; g.textBaseline = 'top';
   if (zoom) {
-    g.fillText(fa.toFixed(2), X(fa) + 14, pt + ph + 5);
-    g.fillText(`f${sub(nC)} = ${fC.toFixed(2)} Hz`, X(fC), pt + ph + 5);
-    g.fillText(fb.toFixed(2), X(fb) - 14, pt + ph + 5);
+    g.textAlign = 'left'; g.fillText(fa.toFixed(2), pl, pt + ph + 4);
+    g.textAlign = 'center'; g.fillText(`f${sub(nC)} ${fC.toFixed(2)} Hz`, X(fC), pt + ph + 4);
+    g.textAlign = 'right'; g.fillText(fb.toFixed(2), pl + pw, pt + ph + 4);
   } else {
-    for (const f of [1, 50, 100, 150, 200]) g.fillText(String(f), clamp(X(f), pl + 8, pl + pw - 10), pt + ph + 5);
-    g.fillStyle = 'rgba(230,237,247,.7)'; g.font = '600 9.5px "IBM Plex Sans", sans-serif'; g.textBaseline = 'bottom';
+    for (const f of [1, 50, 100, 150, 200]) { g.textAlign = f === 1 ? 'left' : f === 200 ? 'right' : 'center'; g.fillText(String(f), X(f), pt + ph + 4); }
+    g.fillStyle = UI.text; g.font = UI.font(9, 500); g.textAlign = 'center'; g.textBaseline = 'top';
     let lastX = -99;
-    for (let n = 1; n * P.f1 <= fb && n <= 60; n++) { const x = X(n * P.f1); if (x - lastX > 16) { g.fillText(String(n), x, pt + 9); lastX = x; } }
+    for (let n = 1; n * P.f1 <= fb && n <= 60; n++) { const x = X(n * P.f1); if (x - lastX > 16) { g.fillText(String(n), x, pt + 3); lastX = x; } }
   }
-  // marcador de la frecuencia actual
-  const r = P.R, xf = X(S.f);
+  // posición del control activo: frecuencia actual
+  const xf = X(S.f);
   if (S.f >= fa && S.f <= fb) {
-    g.strokeStyle = 'rgba(98,201,255,.7)'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(Math.round(xf) + 0.5, pt); g.lineTo(Math.round(xf) + 0.5, pt + ph); g.stroke(); g.setLineDash([]);
-    g.beginPath(); g.arc(xf, Yv(r), 4.5, 0, Math.PI * 2); g.fillStyle = CSS.cyan; g.fill();
-    g.lineWidth = 2; g.strokeStyle = '#070B14'; g.stroke();
+    const xc = crisp(xf);
+    g.strokeStyle = UI.accent; g.lineWidth = 1; g.beginPath(); g.moveTo(xc, pt); g.lineTo(xc, pt + ph); g.stroke();
+    g.fillStyle = UI.accent; g.fillRect(Math.round(xf) - 3, Math.round(Yv(P.R)) - 3, 6, 6);
   } else {
-    const left = S.f < fa; g.fillStyle = CSS.cyan; g.textAlign = left ? 'left' : 'right'; g.textBaseline = 'middle';
-    g.fillText(left ? `◂ f actual (${S.f.toFixed(1)} Hz)` : `f actual (${S.f.toFixed(1)} Hz) ▸`, left ? pl + 4 : pl + pw - 4, pt + ph * 0.55);
+    const left = S.f < fa; g.fillStyle = UI.accent; g.font = UI.font(9.5, 500); g.textAlign = left ? 'left' : 'right'; g.textBaseline = 'middle';
+    g.fillText(left ? `◂ f = ${S.f.toFixed(1)} Hz` : `f = ${S.f.toFixed(1)} Hz ▸`, left ? pl + 5 : pl + pw - 5, pt + ph * 0.55);
   }
   $('#spec-cap').innerHTML = zoom
-    ? `Ancho 2<span class="v">γ</span> = <b>${(2 * P.gamma).toFixed(3)} Hz</b>, <span class="v">Q</span>${sub(nC)} = <b>${P.Q.toFixed(1)}</b>, <span class="v">A</span>/<span class="v">A</span><sub>0</sub> = <b>${(P.R * 100).toFixed(1)} %</b>`
-    : `Respuesta en dB; cada pico es un modo <span class="v">f</span><sub>n</sub> = <span class="v">n f</span><sub>1</sub>.`;
+    ? `2<span class="v">γ</span> <b>${(2 * P.gamma).toFixed(3)}</b> Hz   <span class="v">Q</span>${sub(nC)} <b>${P.Q.toFixed(1)}</b>   <span class="v">A</span>/<span class="v">A</span><sub>0</sub> <b>${(P.R * 100).toFixed(1)}</b> %`
+    : `Respuesta en dB; cada pico es un modo <span class="v">f</span><sub>n</sub> = <span class="v">n f</span><sub>1</sub>`;
 }
 function drawGlyph() {
   const { g, w: W, h: H } = glyph;
   if (W < 10) return;
   g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, W, H);
-  const pad = 6, y0 = H / 2, A = H / 2 - 6, n = P.nNear, st = P.state;
-  const col = st === 'res' ? CSS.emerald : st === 'near' ? CSS.amber : '#8a97ad';
+  const pad = 4, y0 = Math.round(H / 2) + 0.5, A = H / 2 - 5, n = P.nNear, st = P.state;
+  const col = st === 'res' ? UI.ok : st === 'near' ? UI.accent : UI.off;
   const amp = st === 'res' ? 1 : st === 'near' ? 0.55 : 0.18;
-  g.strokeStyle = 'rgba(150,172,210,.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(pad, y0); g.lineTo(W - pad, y0); g.stroke();
+  g.strokeStyle = UI.frame; g.lineWidth = 1; g.beginPath(); g.moveTo(pad, y0); g.lineTo(W - pad, y0); g.stroke();
   const N = Math.min(2400, Math.max(160, n * 12));
-  g.beginPath();
-  for (let i = 0; i <= N; i++) { const xi = i / N, y = y0 - A * amp * Math.sin(n * Math.PI * xi); i ? g.lineTo(pad + xi * (W - 2 * pad), y) : g.moveTo(pad, y); }
-  for (let i = N; i >= 0; i--) { const xi = i / N, y = y0 + A * amp * Math.sin(n * Math.PI * xi); g.lineTo(pad + xi * (W - 2 * pad), y); }
-  g.closePath(); g.fillStyle = col + '22'; g.fill(); g.strokeStyle = col; g.lineWidth = 1.5; g.stroke();
-  if (st !== 'off' && n <= 24) for (let j = 0; j <= n; j++) { g.beginPath(); g.arc(pad + j / n * (W - 2 * pad), y0, 2.4, 0, Math.PI * 2); g.fillStyle = CSS.rose; g.fill(); }
+  g.strokeStyle = col; g.lineWidth = 1.5;
+  for (const sg of [1, -1]) {
+    g.beginPath();
+    for (let i = 0; i <= N; i++) { const xi = i / N, y = y0 - sg * A * amp * Math.sin(n * Math.PI * xi); i ? g.lineTo(pad + xi * (W - 2 * pad), y) : g.moveTo(pad, y); }
+    g.stroke();
+  }
+  if (st !== 'off' && n <= 24) { g.fillStyle = UI.node; for (let j = 0; j <= n; j++) { g.beginPath(); g.arc(pad + j / n * (W - 2 * pad), y0, 2, 0, Math.PI * 2); g.fill(); } }
 }
 
 /* =====================================================================
@@ -2042,6 +2124,7 @@ const START = (() => {
 })();
 $('#btn-q').addEventListener('click', () => setQuality(!Q.high));
 bindControls();
+bindChrome();
 derive();
 ensureResolution();
 onParams('init');
