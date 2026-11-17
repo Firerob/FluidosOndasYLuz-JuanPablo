@@ -215,6 +215,13 @@ input[type=range].range{-webkit-appearance:none;appearance:none;display:block;wi
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
 .ov{position:absolute;z-index:2}
 .hud-tl{top:10px;left:10px;max-width:calc(100% - 20px);pointer-events:none}
+.hud-tr{top:10px;right:10px;max-width:calc(100% - 20px)}
+.ruler-ro{display:flex;align-items:center;gap:10px;padding:5px 8px 5px 10px;background:rgba(14,17,22,.92);border:1px solid var(--sep);border-left:2px solid var(--accent);border-radius:2px;white-space:nowrap}
+.ruler-ro .rr-t{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.ruler-ro .rr-v{font:400 11px var(--mono);color:var(--lab)}
+.ruler-ro .rr-v b{font-weight:500;color:var(--ink)}
+.ruler-ro .rr-v b.hi{color:var(--accent)}
+.ruler-ro .seg > button{height:22px;padding:0 8px;font-size:11px}
 /* tarjeta de estado: la ecuación de onda solo aparece en resonancia activa */
 .status{--st:var(--lab);display:flex;flex-direction:column;gap:5px;padding:6px 10px;background:rgba(14,17,22,.92);border:1px solid var(--sep);border-left:2px solid var(--st);border-radius:2px}
 .status[data-state=res]{--st:var(--ok)}
@@ -338,6 +345,7 @@ kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius
         <button class="tog" data-tog="markers" aria-pressed="true" title="Esferas en nodos y antinodos (M)"><span class="led"></span><span class="lbl-l">Nodos y antinodos</span><span class="lbl-s">Nodos</span></button>
         <button class="tog" data-tog="vectors" aria-pressed="true" title="Vectores de tensión, peso y velocidad (V)"><span class="led"></span>Vectores</button>
         <button class="tog" data-tog="envelope" aria-pressed="true" title="Envolvente estroboscópica (E)"><span class="led"></span>Envolvente</button>
+        <button class="tog" data-tog="ruler" aria-pressed="true" title="Regla vertical para medir la amplitud del vientre; arrástrala a lo largo de la cuerda (G)"><span class="led"></span>Regla</button>
       </div>
       <span class="tb-fill"></span>
       <button class="qbtn" id="btn-q" data-q="alta" title="Calidad gráfica: alta usa brillo, sombras y suavizado; ligera prioriza la fluidez en equipos modestos">Calidad alta</button>
@@ -350,6 +358,18 @@ kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius
         <div class="status" id="status" data-state="res">
           <div class="st-row" role="status" aria-live="polite"><span class="dot"></span><span id="status-txt">En resonancia</span><span class="sn" id="status-n">n = 2</span></div>
           <div class="eq-live" id="eq-live" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="ov hud-tr" id="ruler-hud">
+        <div class="ruler-ro" id="ruler-ro" role="group" aria-label="Lectura de la regla vertical">
+          <span class="rr-t">Regla</span>
+          <span class="rr-v"><span class="v">x</span> = <b id="rr-x">—</b> m</span>
+          <span class="rr-v"><span class="v">A</span> = <b class="hi" id="rr-A">—</b> cm</span>
+          <span class="rr-v">2<span class="v">A</span> = <b id="rr-2A">—</b> cm</span>
+          <div class="seg" role="group" aria-label="Mover la regla al vientre contiguo">
+            <button id="rr-prev" type="button" title="Regla al vientre anterior ([)">◀ Vientre</button>
+            <button id="rr-next" type="button" title="Regla al vientre siguiente (])">Vientre ▶</button>
+          </div>
         </div>
       </div>
       <button class="help-fab" id="btn-help" type="button" aria-haspopup="dialog" title="Ecuaciones del modelo y atajos de teclado">? Teórico</button>
@@ -554,7 +574,7 @@ kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius
       <dt>m<sub>n</sub> = m<sub>1</sub>/n²</dt><dd>Ley de Melde: masa que da n barrigas con f fija</dd>
     </dl>
     <div class="keys">
-      <span><kbd>Espacio</kbd>pausa</span><span><kbd>R</kbd>auto-resonar</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>±0,1 Hz</span><span><kbd>↑</kbd><kbd>↓</kbd>armónico</span><span><kbd>M</kbd><kbd>V</kbd><kbd>E</kbd>capas</span>
+      <span><kbd>Espacio</kbd>pausa</span><span><kbd>R</kbd>auto-resonar</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>±0,1 Hz</span><span><kbd>↑</kbd><kbd>↓</kbd>armónico</span><span><kbd>M</kbd><kbd>V</kbd><kbd>E</kbd><kbd>G</kbd>capas</span><span><kbd>[</kbd><kbd>]</kbd>regla al vientre contiguo</span><span>arrastra la regla con el ratón</span>
     </div>
   </div>
 </dialog>
@@ -661,7 +681,7 @@ const CSS = { emerald: '#2EE6A6', cyan: '#62C9FF', amber: '#FFC56B', rose: '#FF6
 const S = {
   f: 38.9, m: 0.25, L: 1.00, mu: 1.621,        // calibración: n = 2 a 38,9 Hz; n = 4 a 77,8 Hz
   speed: 1, strobe: false, paused: false,
-  markers: true, vectors: true, envelope: true,
+  markers: true, vectors: true, envelope: true, ruler: true, rulerX: null,
   spec: 'zoom',
 };
 const P = {};
@@ -731,7 +751,7 @@ function allocField(n) {
 }
 function neededSegments() {
   const need = Math.max(P.nEff, P.nNear) * 22;
-  return clamp(Math.ceil(need / 64) * 64, 256, 2048);
+  return clamp(Math.ceil(need / 64) * 64, 256, Q.high ? 2048 : 1024);   // en calidad ligera, menos segmentos
 }
 
 // Solución exacta del régimen forzado:  Y(x) = a · sin κ(L−x) / sin κL
@@ -836,17 +856,19 @@ const GL_NAME = (() => {
   } catch (e) { return ''; }
 })();
 const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(GL_NAME);
-const Q = { high: true, slow: 0, t0: performance.now(), wT: performance.now(), wF: 0 };
-const renderPR = () => (Q.high ? DPR : Math.min(DPR, 1) * (SOFTWARE_GL ? 0.5 : 0.7));
+// Equipo modesto: 2 núcleos o menos, o 2 GB de memoria o menos (cuando el navegador lo informa)
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 2 || (navigator.deviceMemory || 8) <= 2;
+const Q = { high: true, scale: 1, slow: 0, good: 0, retry: 0, settle: 0, t0: performance.now(), wT: performance.now(), wF: 0 };
+const renderPR = () => (Q.high ? DPR : Math.min(DPR, 1) * (SOFTWARE_GL ? 0.5 : 0.7)) * Q.scale;
 
 const persp = new THREE.PerspectiveCamera(34, 1, 0.02, 60);
 const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 60);
-let activeCam = persp, aspect = 1, orthoHalfW = 1;
+let activeCam = persp, aspect = 1, orthoHalfW = 1, CH = 1;   // CH: alto CSS del lienzo en caché (evita leer el layout en cada fotograma)
 
 const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
 composer.setPixelRatio(DPR);
 const renderPass = new RenderPass(scene, persp);
-const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.55, 0.8);
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.46, 0.5, 0.84);
 composer.addPass(renderPass);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -864,7 +886,7 @@ ctlO.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
 function canvasTex(c, opts = {}) {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = MAX_ANISO;
+  t.anisotropy = Math.min(MAX_ANISO, 4);
   if (opts.repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(opts.repeat[0], opts.repeat[1]); }
   return t;
 }
@@ -924,8 +946,8 @@ const M = {
   knob: new THREE.MeshStandardMaterial({ color: 0x2c3442, metalness: 0.7, roughness: 0.35 }),
   string: new THREE.MeshStandardMaterial({ color: 0xc9d3e0, metalness: 0.05, roughness: 0.4, emissive: 0x3d86c6, emissiveIntensity: 0.3, transparent: true }),
   stringStatic: new THREE.MeshStandardMaterial({ color: 0xc9d3e0, metalness: 0.05, roughness: 0.45 }),
-  node: new THREE.MeshStandardMaterial({ color: 0xff6f8e, emissive: 0xff6f8e, emissiveIntensity: 1.4, transparent: true, depthWrite: false }),
-  anti: new THREE.MeshStandardMaterial({ color: 0xffc56b, emissive: 0xffc56b, emissiveIntensity: 1.3, transparent: true, depthWrite: false }),
+  node: new THREE.MeshStandardMaterial({ color: 0xff6f8e, emissive: 0xff6f8e, emissiveIntensity: 1.1, transparent: true, depthWrite: false }),
+  anti: new THREE.MeshStandardMaterial({ color: 0xffc56b, emissive: 0xffc56b, emissiveIntensity: 1.0, transparent: true, depthWrite: false }),
   marker: new THREE.MeshStandardMaterial({ color: 0xa495ff, emissive: 0xa495ff, emissiveIntensity: 0.9 }),
 };
 const DISC_MAT = { steel: M.steel, brass: M.brass, alu: M.alu };
@@ -1344,7 +1366,7 @@ function setLabel(sp, text, color, force = false) {
 }
 // Altura en píxeles constante: en perspectiva la escala es fracción de 2·tan(fov/2); en ortográfica, de la altura visible
 function labelH(px) {
-  const H = canvas.clientHeight || 1;
+  const H = CH;
   return activeCam === ortho ? px / H * (2 * orthoHalfW / aspect / ortho.zoom) : px / H * 2 * tanHalf();
 }
 function placeLabel(sp, x, y, z, px = 25) { const h = labelH(px); sp.position.set(x, y, z); sp.scale.set(h * 512 / 112, h, 1); }
@@ -1384,6 +1406,106 @@ const board = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicM
 board.position.z = -0.07; board.renderOrder = 0; scene.add(board);
 let boardA = 0;
 
+/* ---------- regla vertical graduada, desplazable a lo largo de la cuerda ----------
+   Cero en el eje de la cuerda (positivo hacia arriba); apoyada en la mesa sobre un carril.
+   Dos marcas ámbar señalan ±A, la amplitud de la envolvente en la posición de la regla. */
+const RUL = { z: -0.04, w: 0.05, yBot: 0.0, yTop: YS + 0.17, relBot: -YS, relTop: 0.17, margin: 0.045 };
+RUL.h = RUL.yTop - RUL.yBot;
+const rulerFaceTex = (() => {
+  const W = 128, H = 2048, [c, g] = makeCanvas(W, H), span = RUL.relTop - RUL.relBot;
+  g.fillStyle = 'rgba(16,24,36,.5)'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(150,190,255,.55)'; g.lineWidth = 3; g.strokeRect(1.5, 1.5, W - 3, H - 3);
+  g.textBaseline = 'middle'; g.textAlign = 'left'; g.font = '600 42px "IBM Plex Sans", sans-serif';
+  const row = (rel) => (RUL.relTop - rel) / span * H;
+  for (let k = Math.ceil(RUL.relBot * 1000); k <= Math.floor(RUL.relTop * 1000); k++) {
+    const y = row(k / 1000), cm = k % 10 === 0, half = k % 5 === 0;
+    g.fillStyle = cm ? '#ffffff' : half ? 'rgba(235,242,255,.9)' : 'rgba(200,212,235,.7)';
+    const len = cm ? 46 : half ? 30 : 16;
+    g.fillRect(W - len, Math.round(y) - (cm ? 2 : 1), len, cm ? 4 : 2);
+    if (cm && k !== 0) { g.fillStyle = '#e8eefb'; g.fillText(String(k / 10), 8, y); }
+  }
+  g.fillStyle = CSS.amber; g.fillRect(0, Math.round(row(0)) - 2, W, 4);     // cero = eje de la cuerda
+  g.fillText('0', 8, row(0) - 18);
+  return canvasTex(c);
+})();
+const rulerFaceMat = new THREE.MeshBasicMaterial({ map: rulerFaceTex, transparent: true, depthWrite: false });
+const rulerDark = new THREE.MeshStandardMaterial({ color: 0x18212f, metalness: 0.6, roughness: 0.45, transparent: true, opacity: 0.5, depthWrite: false });
+const rulerMarkMat = new THREE.MeshBasicMaterial({ color: CSS.amber, transparent: true });
+const rulerHandleMat = new THREE.MeshStandardMaterial({ color: 0xffc56b, emissive: 0xffc56b, emissiveIntensity: 0.35, metalness: 0.3, roughness: 0.4 });
+const rulerG = new THREE.Group(); scene.add(rulerG);
+const rulerRod = new THREE.Mesh(new THREE.BoxGeometry(RUL.w, RUL.h, 0.006), [rulerDark, rulerDark, rulerDark, rulerDark, rulerFaceMat, rulerDark]);
+rulerRod.position.set(0, RUL.yBot + RUL.h / 2, 0); rulerRod.renderOrder = 5; rulerG.add(rulerRod);
+{
+  const car = mesh(new THREE.BoxGeometry(0.11, 0.024, 0.06), M.steel); car.position.set(0, 0.012, 0); rulerG.add(car);
+  const cap = mesh(new THREE.BoxGeometry(0.058, 0.02, 0.026), rulerHandleMat); cap.position.set(0, RUL.yTop + 0.012, 0); cap.castShadow = false; rulerG.add(cap);
+  for (const sgn of [-1, 1]) {
+    const cone = mesh(new THREE.ConeGeometry(0.011, 0.024, 14), rulerHandleMat); cone.rotation.z = -sgn * Math.PI / 2;
+    cone.position.set(sgn * 0.045, RUL.yTop + 0.012, 0); cone.castShadow = false; rulerG.add(cone);
+  }
+}
+const rulerHit = new THREE.Mesh(new THREE.BoxGeometry(0.09, RUL.h + 0.05, 0.06), new THREE.MeshBasicMaterial({ visible: false }));
+rulerHit.position.set(0, RUL.yBot + RUL.h / 2 + 0.012, 0); rulerG.add(rulerHit);
+const rulerMarks = [1, -1].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.0028, 0.004), rulerMarkMat); m.renderOrder = 8; scene.add(m); return m; });
+const rulerRail = mesh(new THREE.BoxGeometry(1, 0.003, 0.016), M.steel, { cast: false }); scene.add(rulerRail);
+const lblR = makeLabel();
+const rul = { A: 0, xi: 0 };
+function rulerClamp(x) { return clamp(x, vib.x + RUL.margin, XP - RUL.margin); }
+function setRulerX(x) { S.rulerX = rulerClamp(x); }
+S.rulerX = XP - 0.75 * S.L;                               // inicio: primer vientre (ξ = 1/4 para n = 2)
+function updateRuler() {
+  const on = S.ruler;
+  rulerG.visible = rulerMarks[0].visible = rulerMarks[1].visible = rulerRail.visible = lblR.visible = on;
+  $('#ruler-hud').hidden = !on;
+  if (!on) return;
+  S.rulerX = rulerClamp(S.rulerX);
+  const L = XP - vib.x, xi = clamp((S.rulerX - vib.x) / L, 0, 1), A = envAt(xi);
+  rul.A = A; rul.xi = xi;
+  rulerG.position.set(S.rulerX, 0, RUL.z);
+  rulerMarks[0].position.set(S.rulerX, YS + A, RUL.z + 0.004);
+  rulerMarks[1].position.set(S.rulerX, YS - A, RUL.z + 0.004);
+  rulerRail.scale.x = L; rulerRail.position.set(vib.x + L / 2, 0.0015, RUL.z);
+  setLabel(lblR, `A = ${(A * 100).toFixed(2)} cm`, CSS.amber);
+  placeLabel(lblR, S.rulerX + 0.105, YS + Math.max(A, 0.01) + 0.035, 0.01, 22);
+}
+function antinodeXis() {
+  const out = []; let mx = 0;
+  for (let i = 0; i <= NS; i++) if (env[i] > mx) mx = env[i];
+  for (let i = 1; i < NS; i++) if (env[i] > env[i - 1] && env[i] >= env[i + 1] && env[i] > 0.15 * mx) out.push(i / NS);
+  return out;
+}
+function stepAntinode(dir) {
+  const L = XP - vib.x, xi = clamp((S.rulerX - vib.x) / L, 0, 1), list = antinodeXis();
+  const cand = dir > 0 ? list.filter((v) => v > xi + 0.004) : list.filter((v) => v < xi - 0.004).reverse();
+  if (cand.length) setRulerX(vib.x + cand[0] * L);
+}
+function updateRulerRead() {
+  if (!S.ruler) return;
+  const set = (id, t) => { const e = document.getElementById(id); if (e && e.textContent !== t) e.textContent = t; };
+  set('rr-x', S.rulerX.toFixed(3)); set('rr-A', (rul.A * 100).toFixed(2)); set('rr-2A', (rul.A * 200).toFixed(2));
+}
+// Arrastre con el ratón: la regla intercepta el gesto antes que los controles de órbita
+const rayC = new THREE.Raycaster(), ndcV = new THREE.Vector2();
+let rulerDrag = null;
+function ndcOf(e) { const r = canvas.getBoundingClientRect(); ndcV.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height * 2 - 1)); rayC.setFromCamera(ndcV, activeCam); }
+const overRuler = (e) => { if (!S.ruler) return false; ndcOf(e); return rayC.intersectObject(rulerHit, false).length > 0; };
+function rulerPlaneX(e) { ndcOf(e); const o = rayC.ray.origin, d = rayC.ray.direction; return Math.abs(d.z) < 1e-6 ? S.rulerX : o.x + d.x * (RUL.z - o.z) / d.z; }
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || !overRuler(e)) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  rulerDrag = { dx: S.rulerX - rulerPlaneX(e), id: e.pointerId };
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* puntero ya liberado */ }
+  canvas.style.cursor = 'grabbing';
+}, true);
+canvas.addEventListener('pointermove', (e) => {
+  if (rulerDrag) { setRulerX(rulerPlaneX(e) + rulerDrag.dx); return; }
+  if (S.ruler && e.buttons === 0) canvas.style.cursor = overRuler(e) ? 'ew-resize' : '';
+});
+const endRulerDrag = (e) => { if (!rulerDrag) return; try { canvas.releasePointerCapture(rulerDrag.id); } catch (err) { /* ya liberado */ } rulerDrag = null; canvas.style.cursor = overRuler(e) ? 'ew-resize' : ''; };
+canvas.addEventListener('pointerup', endRulerDrag);
+canvas.addEventListener('pointercancel', endRulerDrag);
+$('#rr-prev').addEventListener('click', () => stepAntinode(-1));
+$('#rr-next').addEventListener('click', () => stepAntinode(1));
+
 /* =====================================================================
    11. CÁMARA: PRESETS, TRANSICIONES Y SEGUIMIENTO
    ===================================================================== */
@@ -1398,7 +1520,7 @@ function measureOverlays() {
   ovl.top = clamp(hudEl.getBoundingClientRect().bottom - cr.top + 12, 0, h * 0.22);
 }
 function frameFit() {
-  const h = canvas.clientHeight || 1;
+  const h = CH;
   return { avail: clamp((h - ovl.top - ovl.bottom) / h, 0.45, 1), off: (ovl.bottom - ovl.top) / 2 / h };
 }
 function perspFrame(center, dirv, spanW, spanH) {
@@ -1489,7 +1611,7 @@ function resize() {
   const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
-  aspect = w / h;
+  aspect = w / h; CH = h;
   persp.aspect = aspect; persp.updateProjectionMatrix();
   applyOrthoFrustum();
   measureOverlays();
@@ -1668,6 +1790,9 @@ function onKey(e) {
     case 'm': case 'M': toggleLayer('markers'); break;
     case 'v': case 'V': toggleLayer('vectors'); break;
     case 'e': case 'E': toggleLayer('envelope'); break;
+    case 'g': case 'G': toggleLayer('ruler'); break;
+    case '[': stepAntinode(-1); break;
+    case ']': stepAntinode(1); break;
     default: break;
   }
 }
@@ -2059,16 +2184,17 @@ function frame(now) {
   const fDisp = S.paused ? 0 : (S.strobe ? STROBE_HZ : S.f * S.speed);
   blur += (smooth(5, 14, fDisp) - blur) * kG;
   M.string.emissive.copy(C3.emOff).lerp(C3.res, glow);
-  M.string.emissiveIntensity = lerp(0.3, 2.0, glow);
+  M.string.emissiveIntensity = lerp(0.3, 1.55, glow);
   M.string.opacity = 1 - 0.45 * blur;
   bandMat.uniforms.uColor.value.copy(C3.off).lerp(C3.res, glow);
-  bandMat.uniforms.uOpacity.value = (0.10 + 0.42 * blur) * (0.45 + 0.55 * glow);
+  bandMat.uniforms.uOpacity.value = (0.10 + 0.42 * blur) * (0.42 + 0.46 * glow);
   envLineMat.color.copy(C3.off).lerp(C3.res, glow);
-  envLineMat.opacity = 0.35 + 0.55 * glow;
+  envLineMat.opacity = 0.35 + 0.42 * glow;
   str.band.visible = S.envelope; str.top.visible = S.envelope; str.bot.visible = S.envelope;
 
   updateMarkers(realDt);
   updateVectors();
+  updateRuler();
   placeLabel(lbl.L, vib.x + (XP - vib.x) / 2, 0.03 * P.sz, DIM_Z);
 
   // pizarra de fondo (solo en vista frontal)
@@ -2089,26 +2215,50 @@ function frame(now) {
   if (Q.high) composer.render(); else renderer.render(scene, activeCam);
   frameCount++;
   Q.wF++;
-  if (now - Q.wT > 2000) {
-    const fps = Q.wF * 1000 / (now - Q.wT); Q.wT = now; Q.wF = 0;
-    if (Q.high && now - Q.t0 > 5000) { Q.slow = fps < 28 ? Q.slow + 1 : 0; if (Q.slow >= 2) setQuality(false, true); }
-  }
+  adaptQuality(now);
   if (snapCb) { const cb = snapCb; snapCb = null; cb(); }
   if (Q.high || frameCount % 2 === 0) drawScope();
 
   uiAcc += realDt; fpsAcc += realDt; fpsN++;
-  if (uiAcc > 0.1) { uiAcc = 0; updateLive(); }
+  if (uiAcc > 0.1) { uiAcc = 0; updateLive(); updateRulerRead(); }
   if (fpsAcc > 0.5) { $('#fps').textContent = Math.round(fpsN / fpsAcc) + ' FPS'; fpsAcc = 0; fpsN = 0; }
 }
 
 /* =====================================================================
    15. ARRANQUE
    ===================================================================== */
+// Calidad adaptable: mide los FPS cada segundo y, si bajan de 40, reduce primero la resolución de render
+// (hasta 0,55×) y después pasa a calidad ligera; no vuelve a subir sola (evita oscilaciones y tirones).
+// Pulsar el botón de calidad reinicia el ajuste.
+function setScale(v) {
+  Q.scale = v; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;   // asentamiento: recompilación y cambio de tamaño
+  renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
+  resize();
+}
+function adaptQuality(now) {
+  if (now - Q.wT < 1000) return;
+  const fps = Q.wF * 1000 / (now - Q.wT); Q.wT = now; Q.wF = 0;
+  if (now - Q.t0 < 2500 || now < Q.settle || document.hidden) return;        // arranque y asentamiento tras un cambio: compilación de shaders y entrada de cámara
+  if (fps >= 40) {
+    Q.slow = 0;
+    // si el rendimiento fue holgado durante 20 s seguidos, se recupera un paso de resolución (máximo 2 veces por sesión)
+    if (fps >= 57 && Q.scale < 1 && Q.retry < 2) { if (++Q.good >= 20) { Q.good = 0; Q.retry++; setScale(Math.min(1, Q.scale + 0.15)); } }
+    else Q.good = 0;
+    return;
+  }
+  Q.good = 0;
+  if (fps >= 12 && ++Q.slow < 2) return;                   // por debajo de 12 FPS basta una medida
+  Q.slow = 0;
+  if (Q.scale > 0.6 && fps >= 12) setScale(Math.max(0.55, Q.scale - 0.15));
+  else if (Q.high) setQuality(false, true);
+  else if (Q.scale > 0.6) setScale(0.55);
+}
 function setQuality(high, auto = false) {
-  Q.high = high; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0;
+  Q.high = high; Q.scale = 1; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;
   renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
   if (keyLight) keyLight.castShadow = high;
   resize();
+  ensureResolution();
   const b = $('#btn-q');
   b.dataset.q = high ? 'alta' : 'ligera';
   b.textContent = high ? 'Calidad alta' : (auto ? 'Calidad ligera (auto)' : 'Calidad ligera');
@@ -2135,7 +2285,7 @@ drawSpectrum(); drawGlyph();
 rebuildCable();
 
 if (START.vel) setSpeed(START.vel);
-if (START.calidad === 'ligera' || (!START.calidad && SOFTWARE_GL)) setQuality(false, !START.calidad);
+if (START.calidad === 'ligera' || (!START.calidad && (SOFTWARE_GL || LOWEND))) setQuality(false, !START.calidad);
 // Entrada orquestada: la cámara llega mientras la resonancia n = 2 se establece
 if (START.cam) { const F0 = frameFor('iso'); persp.position.copy(F0.pos); ctlP.target.copy(F0.target); persp.lookAt(F0.target); flyTo(START.cam, 0.6); }
 else {
@@ -2160,6 +2310,8 @@ window.__melde = {
   get activeCam() { return activeCam === ortho ? 'ortho' : 'persp'; },
   get tweening() { return !!camTween; }, get sweeping() { return !!sweep; },
   camera: () => ({ p: activeCam.position.toArray(), t: (activeCam === ortho ? ctlO : ctlP).target.toArray(), zoom: activeCam.zoom, aspect }),
+  ruler: () => ({ px: (() => { const v = new V3(S.rulerX, RUL.yTop + 0.012, RUL.z).project(activeCam), r = canvas.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; })(), x: S.rulerX, A: rul.A, xi: rul.xi, visible: rulerG.visible, hud: !$('#ruler-hud').hidden, marks: rulerMarks.map((m) => m.position.y), antinodes: antinodeXis() }),
+  setRulerX, stepAntinode,
   rodY: () => vib.rod.position.y, vibX: () => vib.x, hangY: () => hang.y,
   discs: () => hang.list.map((d) => d.g), discMeshes: () => hang.discs.length,
   layers: () => ({ band: str.band.visible, arrows: arr.TL.visible, labels: lbl.T.visible, nodes: nodePool.some((m) => m.visible) }),

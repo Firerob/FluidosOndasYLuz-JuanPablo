@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interferencia y difracción de la luz · Doble rendija de Young</title>
+<meta name="description" content="Simulador docente de óptica física: doble rendija de Young, difracción de Fraunhofer y red de difracción con espectro visible, frentes de onda de Huygens y pantalla graduada." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230A0C10'/%3E%3Cpath d='M3 16h8M13 8v6M13 18v6' stroke='%23F59E0B' stroke-width='2' fill='none'/%3E%3Cpath d='M17 16c5-1 8-4 12-8M17 16h12M17 16c5 1 8 4 12 8' stroke='%2310B981' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+/* =====================================================================
+   Interfaz de instrumentación: paneles acoplados, superficies mates,
+   separadores de 1 px, poco texto y un único acento funcional.
+   ===================================================================== */
+:root{
+  --app:#0A0C10;
+  --dock:#0C0E12;
+  --bay:#0B0D11;
+  --row:#121620;
+  --hover:#1A1F29;
+  --sep:#222630;
+  --div:#1C212B;
+  --field:#07090C;
+  --field-b:#2A303C;
+  --raise:#141821;
+  --ink:#E5E7EB;
+  --ink-2:#C9D1D9;
+  --lab:#6B7280;
+  --dim:#4B5563;
+  --accent:#F59E0B;
+  --accent-bg:#1E180C;
+  --ok:#10B981;
+  --flow:#0EA5E9;
+  --bad:#EF4444;
+  --bad-bg:#2A1012;
+  --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --math:"IBM Plex Serif","Cambria Math",Cambria,"Times New Roman",serif;
+  --bar:36px;
+  --bay-h:224px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--app);color:var(--ink);font:400 12px/1.45 var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{overflow:hidden}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;border-radius:2px}
+button:disabled{cursor:not-allowed;opacity:.35}
+[hidden]{display:none!important}
+:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+.v{font-family:var(--math);font-style:italic;font-weight:400;letter-spacing:0}
+sub{font-size:.72em;line-height:0}
+b,dd,td,kbd{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- estructura: banco central + paneles acoplados ---------- */
+#app{display:grid;height:100vh;height:100dvh;grid-template-columns:292px minmax(0,1fr) 316px;grid-template-areas:"left center right";background:var(--app)}
+.side-wrap{display:contents}
+#panel-left{grid-area:left;border-right:1px solid var(--sep)}
+#panel-right{grid-area:right;border-left:1px solid var(--sep)}
+.center{grid-area:center;display:grid;grid-template-rows:var(--bar) minmax(0,1fr) var(--bar) var(--bay-h);min-width:0;min-height:0}
+
+.dock{background:var(--dock);min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+.dock::-webkit-scrollbar,.side-wrap::-webkit-scrollbar{width:8px}
+.dock::-webkit-scrollbar-thumb,.side-wrap::-webkit-scrollbar-thumb{background:#2A303C}
+.dock-title{height:var(--bar);flex:0 0 var(--bar);display:flex;align-items:center;gap:9px;padding:0 14px;border-bottom:1px solid var(--sep);overflow:hidden}
+.dock-title h1{margin:0;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sec{padding:11px 14px 13px;border-bottom:1px solid var(--div)}
+.sec-h{margin:0 0 9px;font-size:10px;font-weight:600;line-height:1.2;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sec-head .sec-h{margin:0}
+
+/* ---------- controles de parámetro ---------- */
+.ctrl + .ctrl{margin-top:11px;padding-top:10px;border-top:1px solid var(--div)}
+.ctrl-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ctrl-head label{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.ctrl-head label .v{font-size:13px;color:var(--lab)}
+.num-wrap{display:flex;align-items:stretch;height:28px;flex:0 0 auto;background:var(--field);border:1px solid var(--field-b);border-radius:2px}
+.num-wrap:focus-within{border-color:var(--accent)}
+.num{width:82px;padding:0 8px;background:transparent;border:0;outline:none;color:var(--ink);font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.num:focus-visible{outline:none}
+.num::-webkit-inner-spin-button,.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num-wrap .unit{display:flex;align-items:center;justify-content:center;min-width:36px;padding:0 6px;border-left:1px solid var(--field-b);background:#0B0E13;font:500 10.5px var(--mono);color:var(--lab)}
+
+input[type=range].range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:22px;margin:3px 0 0;background:transparent;cursor:pointer;--p:50%}
+.range:focus-visible{outline:none}
+.range::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,#8B949E 0 var(--p),#2A303C var(--p) 100%)}
+.range::-moz-range-track{height:2px;background:#2A303C}
+.range::-moz-range-progress{height:2px;background:#8B949E}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:16px;margin-top:-7px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range::-moz-range-thumb{width:8px;height:16px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range:hover::-webkit-slider-thumb,.range:focus-visible::-webkit-slider-thumb,.range:active::-webkit-slider-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
+.range:hover::-moz-range-thumb,.range:focus-visible::-moz-range-thumb,.range:active::-moz-range-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
+.range.locked::-webkit-slider-runnable-track{background:linear-gradient(90deg,#8B949E 0 var(--p),#2A303C var(--p) 100%)}
+
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px}
+.kv > span:first-child{font-size:10.5px;color:var(--lab)}
+.kv .val{font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.kv .val b{font-size:14px;font-weight:500;color:var(--ink)}
+.lock{display:inline-flex;align-items:center;gap:4px;font:500 10px var(--mono);color:var(--lab)}
+.lock.on{color:var(--accent)}
+
+/* interruptor de dos posiciones (segmentado a todo el ancho) */
+.seg.full{display:flex;width:100%;margin-top:9px}
+.seg.full > button{flex:1;justify-content:center}
+
+/* selector compacto de fluido */
+
+/* ---------- diagnóstico de cavitación ---------- */
+.diag{--st:var(--ok)}
+.diag[data-state=near]{--st:var(--accent)}
+.diag[data-state=cav]{--st:var(--bad);background:linear-gradient(180deg,var(--bad-bg),transparent 70%)}
+.state{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--st);white-space:nowrap}
+.state::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.diag[data-state=cav] .state::before{animation:blink .7s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+.big{display:flex;align-items:baseline;gap:8px;padding:8px 0 8px}
+.big b{font:600 30px/1 var(--mono);color:var(--st)}
+.big span{font:400 11px var(--mono);color:var(--lab)}
+.big .cap{margin-left:auto;font:400 10.5px var(--sans);color:var(--lab);text-align:right;line-height:1.3}
+.meter-row{display:flex;align-items:center;gap:10px}
+.meter{position:relative;flex:1;height:4px;background:#1A1F29}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--st)}
+.meter u{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--bad)}
+.meter-val{min-width:84px;text-align:right;font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.meter-val b{font-size:13px;font-weight:500;color:var(--ink)}
+.diag-msg{margin:9px 0 0;font-size:10.5px;color:var(--lab);line-height:1.35;min-height:14px}
+.diag[data-state=cav] .diag-msg{color:#FCA5A5}
+.btn-primary{width:100%;height:32px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 10px;background:var(--raise);border:1px solid var(--field-b);border-radius:2px;font-size:12px;font-weight:600;color:var(--ink)}
+.btn-primary .ba{display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-primary .sub{font:500 12px var(--mono);color:var(--ink-2)}
+
+/* ---------- panel derecho con pestañas ---------- */
+.tabs{display:flex;height:var(--bar);flex:0 0 var(--bar);border-bottom:1px solid var(--sep)}
+.tabs [role=tab]{flex:1;height:100%;padding:0 6px;border-radius:0;font-size:11px;font-weight:500;color:var(--lab);border-right:1px solid var(--div);white-space:nowrap}
+.tabs [role=tab]:last-child{border-right:0}
+.tabs [role=tab]:hover{color:var(--ink-2);background:var(--hover)}
+.tabs [role=tab][aria-selected=true]{color:var(--accent);background:var(--accent-bg);box-shadow:inset 0 -2px 0 var(--accent)}
+.pane{padding:12px 14px 14px}
+
+.sheet{margin:0;border:1px solid var(--div)}
+.sheet > div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 9px;border-bottom:1px solid var(--div)}
+.sheet > div:last-child{border-bottom:0}
+.sheet > div:nth-child(even){background:var(--row)}
+.sheet dt{font-size:10.5px;color:var(--lab);white-space:nowrap}
+.sheet dt .v{font-size:12px}
+.sheet dd{margin:0;font:500 13px var(--mono);color:var(--ink);text-align:right;white-space:nowrap}
+.sheet dd small{margin-left:5px;font-size:10.5px;font-weight:400;color:var(--lab)}
+.sheet dd .alt{display:block;margin-top:1px;font-size:10.5px;font-weight:400;color:var(--lab)}
+.sheet .hl dd{color:var(--flow)}
+.sheet .neg{color:#FCA5A5}
+.sheet-gap{height:10px}
+.chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;margin-left:6px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10px var(--sans);letter-spacing:.04em;color:var(--ink-2);vertical-align:1px}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--div)}
+.tbl{width:100%;border-collapse:collapse;font:400 12.5px var(--mono)}
+.tbl th{padding:6px;text-align:right;font:500 10px var(--sans);color:var(--lab);background:#0B0E13;border-bottom:1px solid var(--sep);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{width:28px;text-align:center}
+.tbl td{padding:7px 6px;text-align:right;color:var(--ink-2);border-bottom:1px solid var(--div);white-space:nowrap}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl tbody tr:nth-child(even) td{background:var(--row)}
+.tbl td.hp{color:var(--ink);font-weight:500}
+.tbl tr.neg td.hp,.tbl tr.neg td.pp{color:#FCA5A5}
+.tbl .tag{display:inline-block;width:16px;height:16px;line-height:16px;border:1px solid var(--field-b);background:var(--field);font:500 10.5px var(--mono);color:var(--ink-2);text-align:center}
+.note{margin:10px 0 0;font-size:10.5px;color:var(--lab);line-height:1.4}
+.note b{font:500 11.5px var(--mono);color:var(--ink-2)}
+
+/* ---------- barras de herramientas ---------- */
+.toolbar{display:flex;align-items:center;gap:8px;min-width:0;padding:0 10px;background:var(--dock);white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.tb-top{border-bottom:1px solid var(--sep)}
+.time-dock{border-top:1px solid var(--sep);border-bottom:1px solid var(--sep)}
+.tb-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 4px;background:var(--sep)}
+.tb-fill{flex:1 1 auto}
+.seg{display:inline-flex;flex:0 0 auto;background:var(--raise);border:1px solid var(--field-b);border-radius:2px}
+.seg > button{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:0;border-left:1px solid var(--field-b);font-size:11px;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg > button:first-child{border-left:0}
+.seg > button:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.seg > button[aria-pressed=true]{background:var(--accent-bg);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg > .tog[aria-pressed=true]{background:var(--raise);color:var(--ink-2);box-shadow:none}
+.seg > .tog[aria-pressed=true]:hover{background:var(--hover)}
+.seg.sm > button{height:20px;padding:0 8px;font-size:10.5px}
+.cam-btn svg{flex:0 0 auto;opacity:.8}
+.led{flex:0 0 auto;width:7px;height:7px;border-radius:1px;background:#1A1F29;border:1px solid #3A4150}
+.tog[aria-pressed=true] .led{background:var(--accent);border-color:var(--accent)}
+.lbl-s{display:none}
+.qbtn{flex:0 0 auto;height:24px;padding:0 9px;background:var(--raise);border:1px solid var(--field-b);font-size:11px;color:var(--ink-2)}
+.qbtn:hover{color:var(--ink)}
+.qbtn[data-q=ligera]{color:var(--accent);border-color:#5A3D0A}
+.fps{min-width:54px;text-align:right;font:500 10.5px var(--mono);color:var(--lab)}
+.tread{font:400 10.5px var(--mono);color:var(--lab)}
+.tread b{font-size:13px;font-weight:500;color:var(--ink)}
+.tread.frozen b{color:var(--accent)}
+
+/* ---------- visor 3D ---------- */
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:#090C11}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+.ov{position:absolute;z-index:2}
+.hud-tl{top:10px;left:10px;max-width:calc(100% - 20px);pointer-events:none}
+.status{--st:var(--ok);display:flex;flex-direction:column;gap:5px;padding:6px 10px;background:rgba(12,14,18,.92);border:1px solid var(--sep);border-left:2px solid var(--st);border-radius:2px}
+.status[data-state=drain]{--st:var(--flow)}
+.status[data-state=empty]{--st:var(--lab)}
+.status[data-state=cav]{--st:var(--bad)}
+.st-row{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--st)}
+.status .sn{font:500 11.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--st)}
+.eq-live{font:400 11px var(--mono);color:var(--lab);white-space:nowrap}
+.eq-live i{font-family:var(--math);font-style:italic;font-size:12px;color:var(--ink-2)}
+.eq-live b{font-weight:500;color:var(--ink)}
+.vbar{display:flex;align-items:center;gap:6px;font:400 10px var(--mono);color:var(--lab)}
+.vbar i{display:block;width:96px;height:4px;background:linear-gradient(90deg,#1D4ED8,#22D3EE 50%,#F59E0B)}
+.help-fab{position:absolute;right:10px;bottom:10px;z-index:2;height:24px;padding:0 9px;background:rgba(12,14,18,.92);border:1px solid var(--field-b);font:500 11px var(--sans);color:var(--ink-2)}
+.help-fab:hover{border-color:var(--accent);color:var(--accent)}
+.hint2d{position:absolute;left:10px;bottom:10px;z-index:2;padding:3px 7px;background:rgba(12,14,18,.85);border:1px solid var(--sep);font:400 10.5px var(--sans);color:var(--lab);pointer-events:none;opacity:0;transition:opacity .3s}
+.hint2d.show{opacity:1}
+.loader{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#090C11;transition:opacity .4s ease .1s}
+.loader.done{opacity:0;pointer-events:none}
+.ld{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;padding:0 20px;text-align:center;font-size:12px;color:#8B949E}
+.ld svg path{stroke-dasharray:60;animation:dash 1.6s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-120}}
+.loader.err .ld{color:#FCA5A5}
+
+/* ---------- bahía inferior ---------- */
+.bay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);min-width:0;min-height:0;background:var(--bay)}
+.bay-pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.bay-pane + .bay-pane{border-left:1px solid var(--sep)}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:10px;height:28px;flex:0 0 28px;padding:0 10px;border-bottom:1px solid var(--div);overflow:hidden}
+.pane-h h3{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab);white-space:nowrap}
+.pane-h h3 .sub{margin-left:6px;font:400 10.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--lab)}
+.legend{display:flex;gap:10px;overflow:hidden;font-size:10px;color:var(--lab);white-space:nowrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:2px;background:var(--c)}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 3px,transparent 3px 5px)}
+.legend i.dot{width:6px;height:6px;border-radius:50%}
+.pane-h .r{display:flex;align-items:center;gap:10px;min-width:0}
+.plot{position:relative;flex:1 1 auto;min-height:0}
+.plot canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+#dis-cv{cursor:crosshair;touch-action:none}
+
+/* ---------- ayuda teórica (modal) ---------- */
+.help{width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;background:var(--dock);color:var(--ink);border:1px solid var(--field-b);border-radius:2px}
+.help::backdrop{background:rgba(5,7,10,.66)}
+.help-h{display:flex;align-items:center;justify-content:space-between;height:var(--bar);padding:0 14px;border-bottom:1px solid var(--sep)}
+.help-h h2{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.help-x{width:26px;height:26px;display:grid;place-items:center;color:var(--lab);border:1px solid transparent}
+.help-x:hover{color:var(--ink);border-color:var(--field-b)}
+.help-b{padding:4px 14px 14px;overflow-y:auto}
+.eqs{display:grid;grid-template-columns:auto 1fr;margin:0;padding:0}
+.eqs dt,.eqs dd{margin:0;padding:9px 0;border-bottom:1px solid var(--div)}
+.eqs dt{padding-right:18px;font-family:var(--math);font-style:italic;font-size:15px;color:var(--ink);white-space:nowrap;display:flex;align-items:center;gap:3px}
+.eqs dd{font-size:11px;color:var(--lab);display:flex;align-items:center}
+.eqs .grp{grid-column:1/-1;padding:12px 0 4px;font:600 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-style:normal;border-bottom:1px solid var(--sep)}
+.eqs .up{font-style:normal;font-family:var(--sans);font-size:13px}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.8em;line-height:1.05}
+.frac>span:first-child{padding:0 3px 1px;border-bottom:1px solid currentColor}
+.frac>span:last-child{padding:1px 3px 0}
+.sqrt{display:inline-flex;align-items:center}
+.sqrt::before{content:"√";margin-right:-1px;font-style:normal;font-family:var(--sans);font-size:1.15em}
+.sqrt>span{padding:1px 2px 0;border-top:1px solid currentColor}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:10.5px;color:var(--lab)}
+kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10px var(--mono);color:var(--ink-2)}
+
+/* ---------- adaptación a la pantalla ---------- */
+@media (max-width:1499px){
+  #app{grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"center side"}
+  .side-wrap{display:flex;flex-direction:column;grid-area:side;min-height:0;overflow-y:auto;background:var(--dock);border-left:1px solid var(--sep);scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+  .side-wrap > .dock{flex:0 0 auto;overflow:visible;border:0}
+  #panel-right{border-top:1px solid var(--sep)}
+}
+@media (max-width:1240px){ .tb-label{display:none} }
+@media (max-width:1060px){ .legend{display:none} }
+@media (max-width:900px){
+  body{overflow:auto}
+  #app{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-areas:"center" "side"}
+  .center{grid-template-rows:auto max(56vh,340px) auto auto}
+  .toolbar{flex-wrap:wrap;row-gap:6px;padding:6px 10px;white-space:normal}
+  .tb-fill,.tb-sep{display:none}
+  .bay{grid-template-columns:minmax(0,1fr)}
+  .bay-pane{height:220px}
+  .bay-pane + .bay-pane{border-left:0;border-top:1px solid var(--sep)}
+  .side-wrap{overflow:visible;border-left:0;border-top:1px solid var(--sep)}
+  .legend{display:flex}
+}
+@media (max-width:560px){
+  .cam-btn .lbl{display:none}
+  .lbl-l{display:none}
+  .lbl-s{display:inline}
+  .legend,.eq-live,.vbar{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+
+/* ---------- específico del simulador de óptica ---------- */
+:root{--lam:#10B981;--spec:linear-gradient(90deg,#444,#aaa)}
+.range.spec::-webkit-slider-runnable-track{height:8px;background:var(--spec);border:1px solid #07090C}
+.range.spec::-moz-range-track{height:8px;background:var(--spec);border:1px solid #07090C}
+.range.spec::-moz-range-progress{background:transparent}
+.range.spec::-webkit-slider-thumb{margin-top:-7px}
+.range.spec::-moz-range-thumb{margin-top:0}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.preset{display:flex;align-items:center;gap:8px;height:28px;padding:0 8px;background:var(--raise);border:1px solid var(--field-b);font-size:11px;color:var(--ink-2);text-align:left;white-space:nowrap}
+.preset i{flex:0 0 auto;width:8px;height:8px;border-radius:1px;background:var(--pc)}
+.preset b{margin-left:auto;font:500 10.5px var(--mono);color:var(--lab)}
+.preset:hover{border-color:#3A4150;color:var(--ink)}
+.preset[aria-pressed=true]{background:var(--accent-bg);border-color:#5A3D0A;color:var(--accent);box-shadow:inset 2px 0 0 var(--accent)}
+.preset[aria-pressed=true] b{color:var(--accent)}
+.ctrl.off{opacity:.38;pointer-events:none}
+.ctrl[hidden]{display:none}
+.spec-chip{display:inline-flex;align-items:center;gap:6px;font:500 11.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--ink)}
+.spec-chip i{display:block;width:14px;height:8px;border-radius:1px;background:var(--lam);box-shadow:0 0 8px var(--lam)}
+.status{--st:var(--lam)}
+.diag{--st:var(--lam)}
+.big b{color:var(--ink)}
+.tbl tbody tr.clk{cursor:pointer}
+.tbl tbody tr.clk:hover td{background:var(--hover)}
+.tbl tbody tr.sel td{background:var(--accent-bg)!important;color:var(--accent)}
+.tbl tbody tr.sel td.hp{color:var(--accent)}
+.tbl tbody tr.off td{color:var(--dim);cursor:default}
+.tbl td.hp{color:var(--ink);font-weight:500}
+.tbl{font-size:11.5px}
+.tbl th,.tbl td{padding-left:4px;padding-right:4px}
+.tbl th:first-child,.tbl td:first-child{width:30px}
+.sheet .hl dd{color:var(--lam)}
+.listing{font:400 11px var(--mono);color:var(--lab);white-space:normal;text-align:right}
+.hover-read{font:400 10.5px var(--mono);color:var(--lab)}
+.hover-read b{font-weight:500;color:var(--ink)}
+#prof-cv,#pho-cv{cursor:crosshair;touch-action:none}
+.eqs dt{white-space:normal;display:block;align-self:center}
+.eqs dd{align-self:center}
+.small-note{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--div);font-size:10.5px;line-height:1.45;color:var(--lab)}
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+<div id="app">
+
+  <!-- ===================== BANCO CENTRAL ===================== -->
+  <div class="center">
+    <div class="toolbar tb-top" role="toolbar" aria-label="Vista y capas">
+      <span class="tb-label">Vista</span>
+      <div class="seg" role="group" aria-label="Vistas de cámara">
+        <button class="cam-btn" data-cam="top" aria-pressed="false" title="Vista superior 2D ortográfica en corte: frentes de onda de Huygens (tecla 1)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8h4M6 3v4M6 9v4M8 8c3-.5 5-2 7-5M8 8h7M8 8c3 .5 5 2 7 5"/></svg>
+          <span class="lbl">Superior 2D</span></button>
+        <button class="cam-btn" data-cam="iso" aria-pressed="true" title="Vista isométrica 3D del banco óptico (tecla 2)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M2 5l6 3.5L14 5M8 8.5v6"/></svg>
+          <span class="lbl">Isométrica 3D</span></button>
+        <button class="cam-btn" data-cam="screen" aria-pressed="false" title="Vista frontal de la pantalla: patrón de franjas (tecla 3)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="13" height="10" rx="1"/><path d="M4 5v5M6.5 5v5M9 5v5M11.5 5v5" stroke-width="1"/></svg>
+          <span class="lbl">Pantalla frontal</span></button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tb-label">Capas</span>
+      <div class="seg" role="group" aria-label="Capas visibles">
+        <button class="tog" data-tog="waves" aria-pressed="true" title="Frentes de onda de Huygens: crestas y cancelaciones (W)"><span class="led"></span><span class="lbl-l">Frentes de onda</span><span class="lbl-s">Ondas</span></button>
+        <button class="tog" data-tog="rays" aria-pressed="true" title="Rayos a los máximos m = 0, ±1, ±2 (R)"><span class="led"></span><span class="lbl-l">Rayos a máximos</span><span class="lbl-s">Rayos</span></button>
+        <button class="tog" data-tog="env" aria-pressed="true" title="Intensidad I(y) y envolvente de difracción sobre la pantalla (E)"><span class="led"></span><span class="lbl-l">Envolvente</span><span class="lbl-s">Envolv.</span></button>
+      </div>
+      <span class="tb-fill"></span>
+      <button class="qbtn" id="btn-q" data-q="alta" title="Calidad gráfica: alta usa brillo y suavizado; ligera prioriza la fluidez en equipos modestos">Calidad alta</button>
+      <span class="fps" id="fps"></span>
+    </div>
+
+    <main id="stage" aria-label="Banco óptico en 3D">
+      <canvas id="gl" aria-label="Vista 3D del láser, la placa de rendijas y la pantalla" tabindex="0"></canvas>
+      <div class="ov hud-tl">
+        <div class="status" id="status">
+          <div class="st-row" role="status" aria-live="polite"><span class="dot"></span><span id="status-txt">Doble rendija</span><span class="sn spec-chip" id="status-lam"><i></i>532 nm</span></div>
+          <div class="eq-live" id="eq-live"></div>
+        </div>
+      </div>
+      <div class="hint2d" id="hint-2d">Vista 2D · arrastra para desplazar · rueda para acercar</div>
+      <button class="help-fab" id="btn-help" type="button" aria-haspopup="dialog" title="Ecuaciones del modelo y atajos de teclado">? Teórico</button>
+      <div class="loader" id="loader">
+        <div class="ld">
+          <svg width="120" height="40" viewBox="0 0 120 40" fill="none"><path d="M4 20h30M40 8v10M40 22v10" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round"/><path d="M46 20c20-2 36-8 70-16M46 20h70M46 20c20 2 36 8 70 16" stroke="#10B981" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span class="ld-txt">Preparando el banco óptico…</span>
+        </div>
+      </div>
+    </main>
+
+    <div class="toolbar time-dock" role="toolbar" aria-label="Control de tiempo">
+      <span class="tb-label">Tiempo</span>
+      <div class="seg" role="group" aria-label="Velocidad de simulación" id="speed-seg">
+        <button data-speed="1" aria-pressed="true" title="Tiempo real de la animación">1.0×</button>
+        <button data-speed="0.25" aria-pressed="false" title="Cámara lenta ×4">0.25×</button>
+        <button data-speed="0.1" aria-pressed="false" title="Cámara lenta ×10">0.1×</button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <div class="seg" role="group" aria-label="Reproducción">
+        <button class="btn play" id="btn-pause" aria-pressed="false" title="Pausar o reanudar (barra espaciadora)">
+          <svg id="ico-pause" width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="3" height="9" rx=".5"/><rect x="7" y="1.5" width="3" height="9" rx=".5"/></svg>
+          <span id="pause-txt">Pausar</span></button>
+      </div>
+      <span class="tb-fill"></span>
+      <span class="tread"><span class="v">λ</span> = <b id="lam-read">—</b> nm</span>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tread" id="tread"><span class="v">t</span> = <b id="t-read">0.00</b> s</span>
+    </div>
+
+    <div class="bay bottom-bar">
+      <section class="bay-pane" aria-labelledby="h-prof">
+        <header class="pane-h">
+          <h3 id="h-prof">Perfil de intensidad<span class="sub"><span class="v">I</span>(<span class="v">y</span>)/<span class="v">I</span><sub>0</sub></span></h3>
+          <div class="r">
+            <span class="hover-read" id="prof-read"></span>
+            <div class="legend">
+              <span><i style="--c:var(--lam)"></i>interferencia × difracción</span>
+              <span id="lg-env"><i class="dash" style="--c:#9CA3AF"></i>envolvente</span>
+            </div>
+          </div>
+        </header>
+        <div class="plot"><canvas id="prof-cv" aria-label="Intensidad relativa en función de la posición en la pantalla" title="Mueve el cursor para leer I(y)"></canvas></div>
+      </section>
+      <section class="bay-pane" aria-labelledby="h-pho">
+        <header class="pane-h">
+          <h3 id="h-pho">Franja proyectada<span class="sub">regla en mm</span></h3>
+          <div class="legend"><span><i class="dot" style="--c:var(--lam)"></i><span id="pho-lam">532 nm</span></span></div>
+        </header>
+        <div class="plot"><canvas id="pho-cv" aria-label="Patrón de franjas proyectado en la pantalla con regla milimetrada"></canvas></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="side-wrap">
+  <!-- ===================== PANEL IZQUIERDO: PARÁMETROS ===================== -->
+  <aside id="panel-left" class="dock" aria-label="Parámetros ópticos">
+    <header class="dock-title">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 8h4M6.5 3v4M6.5 9v4" fill="none" stroke="#F59E0B" stroke-width="1.3"/><path d="M8.5 8c3-.5 5-2 6.5-5M8.5 8h6.5M8.5 8c3 .5 5 2 6.5 5" fill="none" stroke="#10B981" stroke-width="1.1"/></svg>
+      <h1>Interferencia y difracción</h1>
+    </header>
+
+    <section class="sec" aria-labelledby="h-mode">
+      <h2 class="sec-h" id="h-mode">Placa de rendijas</h2>
+      <div class="seg full" role="group" aria-label="Modo de la placa" id="mode-seg" style="margin-top:0">
+        <button data-mode="double" aria-pressed="true" title="Experimento de Young: dos rendijas (M)">Doble</button>
+        <button data-mode="single" aria-pressed="false" title="Rendija simple: difracción de Fraunhofer (M)">Simple</button>
+        <button data-mode="grating" aria-pressed="false" title="Red de difracción con N rendijas (M)">Red <span class="v" style="margin-left:3px">N</span></button>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-src">
+      <h2 class="sec-h" id="h-src">Fuente láser</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-lam">Longitud de onda <span class="v">λ</span></label>
+          <div class="num-wrap"><input class="num" id="num-lam" type="number" min="380" max="750" step="0.1" inputmode="decimal" aria-label="Longitud de onda en nanómetros" /><span class="unit">nm</span></div>
+        </div>
+        <input class="range spec" id="rng-lam" type="range" min="380" max="750" step="0.1" aria-label="Longitud de onda" />
+        <div class="presets" id="presets" role="group" aria-label="Láseres reales"></div>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-slits">
+      <h2 class="sec-h" id="h-slits">Rendijas</h2>
+      <div class="ctrl" id="ctrl-d">
+        <div class="ctrl-head">
+          <label for="num-d">Separación <span class="v">d</span></label>
+          <div class="num-wrap"><input class="num" id="num-d" type="number" min="0.05" max="1" step="0.01" inputmode="decimal" aria-label="Separación entre rendijas en milímetros" /><span class="unit">mm</span></div>
+        </div>
+        <input class="range" id="rng-d" type="range" min="0.05" max="1" step="0.005" aria-label="Separación entre rendijas" />
+      </div>
+      <div class="ctrl" id="ctrl-a">
+        <div class="ctrl-head">
+          <label for="num-a">Ancho <span class="v">a</span></label>
+          <div class="num-wrap"><input class="num" id="num-a" type="number" min="0.01" max="0.2" step="0.005" inputmode="decimal" aria-label="Ancho de cada rendija en milímetros" /><span class="unit">mm</span></div>
+        </div>
+        <input class="range" id="rng-a" type="range" min="0.01" max="0.2" step="0.0025" aria-label="Ancho de rendija" />
+        <div class="kv"><span>Validez física</span><span class="val"><span class="lock" id="a-lock" title="El ancho de cada rendija debe ser menor que la separación">a &lt; d</span></span></div>
+      </div>
+      <div class="ctrl" id="ctrl-N" hidden>
+        <div class="ctrl-head">
+          <label for="num-N">Número de rendijas <span class="v">N</span></label>
+          <div class="num-wrap"><input class="num" id="num-N" type="number" min="2" max="20" step="1" inputmode="numeric" aria-label="Número de rendijas de la red" /><span class="unit">rend.</span></div>
+        </div>
+        <input class="range" id="rng-N" type="range" min="2" max="20" step="1" aria-label="Número de rendijas" />
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-scr">
+      <h2 class="sec-h" id="h-scr">Pantalla</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-L">Distancia <span class="v">L</span></label>
+          <div class="num-wrap"><input class="num" id="num-L" type="number" min="0.5" max="4" step="0.01" inputmode="decimal" aria-label="Distancia a la pantalla en metros" /><span class="unit">m</span></div>
+        </div>
+        <input class="range" id="rng-L" type="range" min="0.5" max="4" step="0.01" aria-label="Distancia a la pantalla" />
+      </div>
+    </section>
+
+    <section class="sec diag" id="diag" aria-labelledby="h-diag">
+      <div class="sec-head">
+        <h2 class="sec-h" id="h-diag">Diagnóstico</h2>
+        <span class="state" id="d-state" style="--st:var(--lam)">en pantalla</span>
+      </div>
+      <div class="big"><b id="d-dy">—</b><span>mm</span><span class="cap" id="d-cap">separación interfranja<br/>Δy = λL/d</span></div>
+      <div class="kv"><span id="d-nl">Máximos visibles</span><span class="val"><b id="d-nvis">—</b></span></div>
+      <div class="kv"><span>Ventana de la pantalla</span><span class="val">±<b id="d-win">—</b> mm</span></div>
+      <div class="kv"><span>Relación <span class="v">d</span>/<span class="v">a</span></span><span class="val"><b id="d-ratio">—</b></span></div>
+    </section>
+  </aside>
+
+  <!-- ===================== PANEL DERECHO: PESTAÑAS ===================== -->
+  <aside id="panel-right" class="dock" aria-label="Datos del experimento">
+    <div class="tabs" role="tablist" aria-label="Datos del experimento">
+      <button role="tab" id="tab-max" aria-selected="true" aria-controls="pane-max" tabindex="0">Máximos (<span class="v">m</span>)</button>
+      <button role="tab" id="tab-dif" aria-selected="false" aria-controls="pane-dif" tabindex="-1">Difracción</button>
+      <button role="tab" id="tab-tel" aria-selected="false" aria-controls="pane-tel" tabindex="-1">Telemetría</button>
+    </div>
+
+    <section class="pane" role="tabpanel" id="pane-max" aria-labelledby="tab-max">
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr>
+          <th scope="col" id="th-m"><span class="v">m</span></th>
+          <th scope="col"><span class="v">θ</span> (°)</th>
+          <th scope="col"><span class="v">y</span> (mm)</th>
+          <th scope="col"><span class="v">y</span>≈ (mm)</th>
+          <th scope="col"><span class="v">I</span>/<span class="v">I</span><sub>0</sub></th>
+        </tr></thead>
+        <tbody id="max-body"></tbody>
+      </table></div>
+      <p class="note" id="max-note">Haz clic en una fila para resaltar su rayo en la escena 3D.</p>
+      <p class="note"><span class="v">y</span> = <span class="v">L</span> tan <span class="v">θ</span> (exacta) &nbsp;·&nbsp; <span class="v">y</span>≈ = <span class="v">m</span> <span class="v">λ</span> <span class="v">L</span> / <span class="v">d</span> (ángulo pequeño)</p>
+      <p class="small-note">Escala didáctica: en la escena 3D la separación entre rendijas y la longitud de onda se amplían para que los frentes de onda sean visibles. El patrón, la regla de la pantalla, las gráficas y las tablas usan los valores reales.</p>
+    </section>
+
+    <section class="pane" role="tabpanel" id="pane-dif" aria-labelledby="tab-dif" hidden>
+      <h2 class="sr-only">Difracción</h2>
+      <dl class="sheet">
+        <div class="hl"><dt>Lóbulo central (ancho)</dt><dd><span id="f-w0">—</span><small>mm</small></dd></div>
+        <div><dt>Primer mínimo <span class="v">θ</span><sub>1</sub></dt><dd><span id="f-th1">—</span><small>°</small></dd></div>
+        <div><dt>Mínimo <span class="v">y</span><sub>1</sub> (<span class="v">p</span> = 1)</dt><dd><span id="f-y1">—</span><small>mm</small></dd></div>
+        <div><dt>Mínimo <span class="v">y</span><sub>2</sub> (<span class="v">p</span> = 2)</dt><dd><span id="f-y2">—</span><small>mm</small></dd></div>
+        <div><dt>Mínimo <span class="v">y</span><sub>3</sub> (<span class="v">p</span> = 3)</dt><dd><span id="f-y3">—</span><small>mm</small></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div><dt>Franjas en el lóbulo central</dt><dd><span id="f-nc">—</span></dd></div>
+        <div><dt>Órdenes ausentes</dt><dd><span id="f-miss" class="listing">—</span></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div class="hl"><dt id="f-rl-t">Criterio de Rayleigh <span class="v">θ</span><sub>R</sub></dt><dd><span id="f-rl">—</span><small>mrad</small></dd></div>
+        <div><dt id="f-rl2-t">Separación mínima en pantalla</dt><dd><span id="f-rl2">—</span><small id="f-rl2-u">mm</small></dd></div>
+      </dl>
+      <p class="note" id="f-note"></p>
+    </section>
+
+    <section class="pane" role="tabpanel" id="pane-tel" aria-labelledby="tab-tel" hidden>
+      <h2 class="sr-only">Telemetría</h2>
+      <dl class="sheet">
+        <div class="hl"><dt>Frecuencia óptica <span class="v">f</span> = <span class="v">c</span>/<span class="v">λ</span></dt><dd><span id="t-f">—</span><small>THz</small></dd></div>
+        <div class="hl"><dt>Energía del fotón <span class="v">E</span> = <span class="v">h f</span></dt><dd><span id="t-E">—</span><small>eV</small></dd></div>
+        <div class="hl"><dt>Número de onda <span class="v">k</span> = 2π/<span class="v">λ</span></dt><dd><span id="t-k">—</span><small>rad/µm</small></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div><dt>Energía del fotón</dt><dd><span id="t-EJ">—</span><small>10⁻¹⁹ J</small></dd></div>
+        <div><dt>Frecuencia angular <span class="v">ω</span></dt><dd><span id="t-w">—</span><small>10¹⁵ rad/s</small></dd></div>
+        <div><dt>Periodo <span class="v">T</span></dt><dd><span id="t-T">—</span><small>fs</small></dd></div>
+        <div><dt>Momento <span class="v">p</span> = <span class="v">h</span>/<span class="v">λ</span></dt><dd><span id="t-p">—</span><small>10⁻²⁷ kg·m/s</small></dd></div>
+        <div><dt>Fotones por segundo (1 mW)</dt><dd><span id="t-ph">—</span><small>10¹⁵ s⁻¹</small></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div><dt>Frecuencia espacial de franjas</dt><dd><span id="t-fr">—</span><small>franjas/mm</small></dd></div>
+        <div><dt>Diferencia de camino en <span class="v">m</span> = 1</dt><dd><span id="t-dr">—</span><small>µm</small></dd></div>
+        <div><dt>Alcance del patrón (<span class="v">θ</span> máx.)</dt><dd><span id="t-thmax">—</span><small>°</small></dd></div>
+      </dl>
+    </section>
+  </aside>
+  </div>
+</div>
+
+<!-- ===================== AYUDA TEÓRICA ===================== -->
+<dialog class="help" id="help-dlg" aria-labelledby="h-model">
+  <div class="help-h">
+    <h2 id="h-model">Ayuda teórica</h2>
+    <button class="help-x" id="help-close" type="button" aria-label="Cerrar ayuda"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.4"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button>
+  </div>
+  <div class="help-b">
+    <dl class="eqs">
+      <dt class="grp">Young · doble rendija</dt>
+      <dt>Δr = d sin θ</dt><dd>Diferencia de camino óptico entre las dos rendijas (campo lejano)</dd>
+      <dt>d sin θ<sub>m</sub> = m λ</dt><dd>Máximos de interferencia, m = 0, ±1, ±2, …</dd>
+      <dt>d sin θ = (m + <span class="frac"><span>1</span><span>2</span></span>) λ</dt><dd>Mínimos de interferencia</dd>
+      <dt>y<sub>m</sub> = L tan θ<sub>m</sub> ≈ <span class="frac"><span>m λ L</span><span>d</span></span></dt><dd>Posición en la pantalla; la aproximación vale para ángulos pequeños. Δy = λL/d</dd>
+      <dt class="grp">Difracción de Fraunhofer</dt>
+      <dt>a sin θ<sub>p</sub> = p λ</dt><dd>Mínimos de difracción por una rendija de ancho a, p = ±1, ±2, …</dd>
+      <dt>I(θ) = I<sub>0</sub> cos²(<span class="frac"><span>π d sin θ</span><span>λ</span></span>) · sinc²(<span class="frac"><span>π a sin θ</span><span>λ</span></span>)</dt><dd>Interferencia modulada por la envolvente de difracción; sinc x = sin x / x</dd>
+      <dt>Ausencia de orden: m = n d / a</dt><dd>Un máximo de interferencia coincide con un mínimo de difracción</dd>
+      <dt class="grp">Red de difracción (N rendijas)</dt>
+      <dt>I(θ) = I<sub>0</sub> <span class="frac"><span>sin²(N β)</span><span>N² sin²β</span></span> sinc²α</dt><dd>β = π d sin θ / λ, α = π a sin θ / λ; los máximos principales siguen en d sin θ = m λ y se estrechan al crecer N</dd>
+      <dt>R = λ/Δλ = m N</dt><dd>Poder de resolución de la red</dd>
+      <dt class="grp">Criterio de Rayleigh</dt>
+      <dt>θ<sub>R</sub> = λ / a</dt><dd>Dos fuentes se resuelven si su separación angular supera el primer mínimo de difracción (rendija); para abertura circular, 1,22 λ/D</dd>
+      <dt class="grp">Luz y color</dt>
+      <dt>f = c/λ &nbsp;·&nbsp; E = h f &nbsp;·&nbsp; k = 2π/λ</dt><dd>Frecuencia, energía del fotón y número de onda. El color de 380 a 750 nm es una aproximación espectral a RGB</dd>
+    </dl>
+    <div class="keys">
+      <span><kbd>Espacio</kbd>pausa</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>longitud de onda λ</span><span><kbd>↑</kbd><kbd>↓</kbd>separación d</span><span><kbd>M</kbd>modo</span><span><kbd>W</kbd><kbd>R</kbd><kbd>E</kbd>capas</span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // Aviso si la librería 3D no llega (sin conexión o CDN bloqueada).
+  window.__optica_ready = false;
+  window.__optica_fail = function (msg) {
+    if (window.__optica_ready === true) return;
+    var l = document.getElementById('loader');
+    if (!l) return;
+    l.classList.add('err');
+    l.querySelector('.ld-txt').textContent = msg || 'No se pudo cargar Three.js desde la CDN. Comprueba la conexión a Internet y recarga la página: el simulador descarga la librería 3D al abrirse.';
+  };
+  setTimeout(function () { window.__optica_fail(); }, 15000);
+</script>
+
+<script type="module" onerror="window.__optica_fail()">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* =====================================================================
+   1. CONSTANTES FÍSICAS Y GEOMETRÍA DEL BANCO ÓPTICO
+   Las magnitudes físicas van en SI (m, nm, mm según se indique).
+   La escena 3D usa una escala didáctica: ver mapVisual().
+   ===================================================================== */
+const C_LIGHT = 299792458;          // m/s
+const H_PLANCK = 6.62607015e-34;    // J·s
+const Q_E = 1.602176634e-19;        // C
+const LIM = { lam: [380, 750], d: [0.05, 1.0], a: [0.01, 0.20], L: [0.5, 4.0], N: [2, 20] };
+const A_RATIO = 0.98;               // validez física: a < d
+
+const Y_B = 0.60;                   // altura del eje óptico sobre la mesa
+const PLATE_W = 2.4, PLATE_Y0 = 0.10, PLATE_Y1 = 1.10, SLIT_HH = 0.20, PLATE_T = 0.03;
+const SCR_HW = 1.0, SCR_H = 1.0;    // semiancho y alto de la pantalla (escena)
+const W_MM = 20;                    // la pantalla muestra SIEMPRE ±20 mm: regla fija, independiente de λ, d, a, N y L
+const LAM_V = 0.045;                // longitud de onda visual de los frentes de Huygens
+const T_WAVE = 1.4;                 // periodo visual de la onda (s)
+const X_LASER = -2.55, X_TIP = X_LASER + 0.30, X_EXP = -1.50, X_FIELD0 = -0.95;
+const Z_DIM = 1.42;                 // línea de cota de L
+
+// Colores de las franjas: aproximación espectral (Bruton) con ajuste del rojo profundo
+function lamToRGB(l) {
+  let r = 0, g = 0, b = 0;
+  if (l < 440) { r = -(l - 440) / 60; b = 1; }
+  else if (l < 490) { g = (l - 440) / 50; b = 1; }
+  else if (l < 510) { g = 1; b = -(l - 510) / 20; }
+  else if (l < 580) { r = (l - 510) / 70; g = 1; }
+  else if (l < 645) { r = 1; g = Math.pow((645 - l) / 65, 2); }
+  else { r = 1; }
+  const f = l < 420 ? 0.3 + 0.7 * (l - 380) / 40 : l > 700 ? 0.3 + 0.7 * (750 - l) / 50 : 1;
+  const gm = (c) => Math.pow(Math.max(0, c) * f, 0.8);
+  return [gm(r), gm(g), gm(b)];
+}
+const PRESETS = [
+  { lam: 405,   name: 'Violeta' },
+  { lam: 450,   name: 'Azul' },
+  { lam: 532,   name: 'Nd:YAG' },
+  { lam: 632.8, name: 'He-Ne' },
+];
+
+/* =====================================================================
+   2. UTILIDADES
+   ===================================================================== */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const V3 = THREE.Vector3;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const trimTo = (v, maxD, minD) => {
+  let s = v.toFixed(maxD);
+  if (maxD > minD) s = s.replace(new RegExp('0{1,' + (maxD - minD) + '}$'), '');
+  return s.replace(/\.$/, '');
+};
+const fx = (v, d) => (Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? (0).toFixed(d) : v.toFixed(d)).replace('-', '−') : '—');
+const fsig = (v, n = 4) => {
+  if (!Number.isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a === 0) return '0';
+  if (a >= 1e6 || a < 1e-4) return v.toExponential(2).replace('-', '−');
+  const dd = Math.max(0, n - 1 - Math.floor(Math.log10(a)));
+  return v.toFixed(Math.min(dd, 6)).replace('-', '−');
+};
+const set = (id, txt) => { const e = document.getElementById(id); if (e && e.textContent !== txt) e.textContent = txt; };
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+function niceStep(range, n) {
+  const raw = Math.max(1e-9, range / n), p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+const minorOf = (step) => { const m = step / Math.pow(10, Math.floor(Math.log10(step))); return step / (Math.abs(m - 2) < 1e-6 ? 4 : 5); };
+const sinc = (x) => (Math.abs(x) < 1e-6 ? 1 : Math.sin(x) / x);
+const cssRGB = (c, k = 1) => `rgb(${Math.round(clamp(c[0] * k, 0, 1) * 255)},${Math.round(clamp(c[1] * k, 0, 1) * 255)},${Math.round(clamp(c[2] * k, 0, 1) * 255)})`;
+const cssRGBA = (c, a) => `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${a})`;
+
+/* =====================================================================
+   3. ESTADO Y MOTOR FÍSICO (óptica física de Fraunhofer)
+   ===================================================================== */
+const S = {
+  lam: 532, d: 0.25, a: 0.06, L: 2.0, N: 8, mode: 'double',
+  speed: 1, paused: false, waves: true, rays: true, env: true, sel: null, hoverY: null,
+};
+const P = {};      // magnitudes derivadas de S
+
+// Intensidad relativa I(θ)/I0 con s = sin θ (valores reales, SI)
+function Ienv(s) { const al = Math.PI * P.a * s / P.lam; const e = sinc(al); return e * e; }
+function Iint(s) {
+  if (P.mode === 'single') return 1;
+  const be = Math.PI * P.d * s / P.lam;
+  if (P.mode === 'double') { const c = Math.cos(be); return c * c; }
+  const sb = Math.sin(be);
+  if (Math.abs(sb) < 1e-9) return 1;
+  const r = Math.sin(P.N * be) / (P.N * sb);
+  return r * r;
+}
+const Ireal = (s) => Iint(s) * Ienv(s);
+const sOfY = (ymm) => Math.sin(Math.atan(ymm / (P.L * 1000)));
+
+function solve() {
+  const lam = S.lam * 1e-9, d = S.d * 1e-3, a = S.a * 1e-3, L = S.L;
+  const mode = S.mode, single = mode === 'single', grat = mode === 'grating';
+  const N = single ? 1 : grat ? S.N : 2;
+  const lenc = single ? a : d;                       // longitud característica del patrón
+  // Pantalla: ventana física FIJA de ±W_MM mm. La regla no depende de λ, d, a, N ni L.
+  const f0 = SCR_HW / W_MM;                          // unidades de escena por mm
+  const Lv = 1.8 + 0.15 * L;
+  // Geometría visual de la placa: depende solo de d y a (nunca de λ).
+  let dv, av;
+  if (single) { av = 0.18 + 0.45 * Math.log(a / 1e-5) / Math.log(20); dv = av; }
+  else {
+    dv = 0.15 + 0.45 * Math.log(d / 5e-5) / Math.log(20);
+    if (grat && N > 2) dv = Math.min(dv, 2.0 / (N - 1));
+    av = dv * a / d;
+  }
+  // λ visual de los frentes de Huygens (zona cercana, didáctica): su primer orden apunta a la primera franja real
+  const sOne = lam / lenc;
+  let rv = 1.5;
+  if (sOne < 1) { const z1 = f0 * L * Math.tan(Math.asin(sOne)) * 1000; rv = Math.sqrt(z1 * z1 + Lv * Lv) / z1; }
+  rv = Math.max(1.5, Math.min(rv, 60, (single ? av : dv) / 0.012));   // mantiene la onda visual muestreable
+  const lamV = (single ? av : dv) / rv;
+  Object.assign(P, { lam, d, a, L, mode, single, grat, N, lenc, rv, lamV, Lv, dv, av, ad: single ? 1 : a / d });
+  // espectro y fotón
+  P.f = C_LIGHT / lam; P.E = H_PLANCK * P.f / Q_E; P.k = 2 * Math.PI / lam; P.EJ = H_PLANCK * P.f;
+  P.rgb = lamToRGB(S.lam);
+  P.yW = W_MM;                                       // ventana fija de la pantalla (mm)
+  P.dy = lam * L / lenc * 1000;                      // Δy (interfranja) o semiancho del lóbulo central (mm)
+  P.f0 = f0;
+  // tabla de órdenes -4 … +4
+  const rows = [];
+  for (let k = -4; k <= 4; k++) {
+    const s = k * lam / lenc, valid = Math.abs(s) < 1;
+    const row = { k, valid };
+    if (valid) {
+      const th = Math.asin(s);
+      row.theta = th * 180 / Math.PI;
+      row.y = L * Math.tan(th) * 1000;
+      row.yApprox = k * lam * L / lenc * 1000;
+      row.I = single ? (k === 0 ? 1 : 0) : Ireal(s);
+      row.zv = f0 * row.y;                            // posición en la pantalla: lineal en mm reales
+      row.inWin = Math.abs(row.y) <= P.yW + 1e-9;
+      row.absent = !single && k !== 0 && row.I < 1e-3;
+    }
+    rows.push(row);
+  }
+  P.rows = rows;
+  // máximos visibles en la ventana (I ≥ 1 %), o mínimos visibles en rendija simple
+  let nv = 0;
+  for (let k = single ? 1 : 0; k < 400; k++) {
+    const s = k * lam / lenc;
+    if (s >= 1 || L * Math.tan(Math.asin(s)) * 1000 > W_MM) break;
+    if (single) nv += 2; else if (Ireal(s) >= 0.01) nv += k === 0 ? 1 : 2;
+  }
+  P.nVis = nv;
+  // difracción
+  const s1 = lam / a;
+  P.diff = {
+    w0: s1 < 1 ? 2 * L * Math.tan(Math.asin(s1)) * 1000 : NaN,
+    th1: s1 < 1 ? Math.asin(s1) * 180 / Math.PI : NaN,
+    y: [1, 2, 3].map((p) => (p * s1 < 1 ? L * Math.tan(Math.asin(p * s1)) * 1000 : NaN)),
+  };
+  if (!single) {
+    const ratio = d / a;
+    P.diff.nc = 2 * (Math.ceil(ratio - 1e-9) - 1) + 1;
+    const miss = [];
+    for (let m = 1; m <= 12; m++) { const q = m * a / d; if (Math.abs(q - Math.round(q)) < 1e-3 && Math.round(q) >= 1) miss.push(m); }
+    P.diff.miss = miss;
+  }
+  P.thMax = Math.atan(P.yW / (L * 1000)) * 180 / Math.PI;
+}
+
+/* =====================================================================
+   4. RENDERIZADOR, CÁMARAS Y POSTPROCESO
+   ===================================================================== */
+const stage = $('#stage');
+const canvas = $('#gl');
+const HAS_WEBGL = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } })();
+if (!HAS_WEBGL) {
+  window.__optica_ready = 'sin-webgl';
+  const l = $('#loader'); l.classList.add('err');
+  l.querySelector('.ld-txt').textContent = 'Este navegador no tiene WebGL disponible. Activa la aceleración por hardware en la configuración del navegador o usa Chrome, Edge o Firefox actualizados.';
+  await new Promise(() => {});
+}
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(DPR);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.localClippingEnabled = true;
+const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090d);
+scene.fog = new THREE.Fog(0x07090d, 11, 30);
+
+let envTex = null;
+{
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const room = new RoomEnvironment(renderer);
+  envTex = pmrem.fromScene(room, 0.04).texture;
+  scene.environment = envTex;
+  scene.environmentIntensity = 0.10;
+  if (typeof room.dispose === 'function') room.dispose();
+  pmrem.dispose();
+}
+
+let lostTimer = 0;
+canvas.addEventListener('webglcontextlost', () => {
+  const l = $('#loader'); l.classList.remove('done', 'err');
+  l.querySelector('.ld-txt').textContent = 'La tarjeta gráfica se reinició. Recuperando el laboratorio…';
+  lostTimer = setTimeout(() => { l.classList.add('err'); l.querySelector('.ld-txt').textContent = 'La tarjeta gráfica no responde. Recarga la página (F5) para continuar.'; }, 10000);
+}, false);
+canvas.addEventListener('webglcontextrestored', () => {
+  clearTimeout(lostTimer);
+  history.replaceState(null, '', '#' + stateHash());
+  location.reload();
+}, false);
+
+const GL_NAME = (() => {
+  try {
+    const gl = renderer.getContext();
+    if (/firefox/i.test(navigator.userAgent)) return String(gl.getParameter(gl.RENDERER));
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    return String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+  } catch (e) { return ''; }
+})();
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(GL_NAME);
+// Equipo modesto: 2 núcleos o menos, o 2 GB de memoria o menos (cuando el navegador lo informa)
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 2 || (navigator.deviceMemory || 8) <= 2;
+const Q = { high: true, scale: 1, slow: 0, good: 0, retry: 0, settle: 0, t0: performance.now(), wT: performance.now(), wF: 0 };
+const renderPR = () => (Q.high ? DPR : Math.min(DPR, 1) * (SOFTWARE_GL ? 0.5 : 0.7)) * Q.scale;
+
+const persp = new THREE.PerspectiveCamera(34, 1, 0.02, 80);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 80);
+ortho.up.set(0, 0, -1);             // vista superior: +x hacia la derecha, +z hacia abajo
+let activeCam = persp, aspect = 1, orthoHalfW = 1, CH = 1;   // CH: alto CSS del lienzo en caché (evita leer el layout en cada fotograma)
+
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
+composer.setPixelRatio(DPR);
+const renderPass = new RenderPass(scene, persp);
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.55, 0.8);
+composer.addPass(renderPass);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+const ctlP = new OrbitControls(persp, canvas);
+Object.assign(ctlP, { enableDamping: true, dampingFactor: 0.08, minDistance: 0.3, maxDistance: 18, maxPolarAngle: Math.PI * 0.495, rotateSpeed: 0.7, zoomSpeed: 0.9 });
+const ctlO = new OrbitControls(ortho, canvas);
+Object.assign(ctlO, { enableDamping: true, dampingFactor: 0.1, enableRotate: false, minZoom: 0.6, maxZoom: 16, enabled: false });
+ctlO.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+ctlO.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+
+/* =====================================================================
+   5. MATERIALES Y TEXTURAS PROCEDURALES
+   ===================================================================== */
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+function canvasTex(c) {
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(MAX_ANISO, 4);
+  return t;
+}
+const MONO = '"JetBrains Mono", ui-monospace, Consolas, monospace';
+
+// Mesa óptica: rejilla de orificios M6 cada 25 mm (aquí, 0,1 u por orificio)
+function tableTexture() {
+  const [c, g] = makeCanvas(128, 128);
+  g.fillStyle = '#10141b'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#0b0e13'; g.fillRect(0, 0, 128, 3); g.fillRect(0, 0, 3, 128);
+  const gr = g.createRadialGradient(64, 64, 6, 64, 64, 22);
+  gr.addColorStop(0, '#020304'); gr.addColorStop(0.72, '#050608'); gr.addColorStop(1, '#222a35');
+  g.fillStyle = gr; g.beginPath(); g.arc(64, 64, 22, 0, Math.PI * 2); g.fill();
+  const t = canvasTex(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(68, 32);
+  return t;
+}
+function glowTexture() {
+  const [c, g] = makeCanvas(128, 128);
+  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+const GLOW = glowTexture();
+
+const colLam = new THREE.Color();       // color del láser (linear)
+const M = {
+  table: new THREE.MeshStandardMaterial({ map: tableTexture(), color: 0xffffff, metalness: 0.15, roughness: 0.75, envMapIntensity: 0.35 }),
+  tableSide: new THREE.MeshStandardMaterial({ color: 0x151a22, metalness: 0.5, roughness: 0.5 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0x8c96a5, metalness: 1, roughness: 0.34, side: THREE.DoubleSide }),
+  alu: new THREE.MeshStandardMaterial({ color: 0x2a313d, metalness: 0.85, roughness: 0.36, side: THREE.DoubleSide }),
+  black: new THREE.MeshStandardMaterial({ color: 0x0d1015, metalness: 0.4, roughness: 0.55, side: THREE.DoubleSide }),
+  plate: new THREE.MeshStandardMaterial({ color: 0x3a4454, metalness: 0.45, roughness: 0.5, side: THREE.DoubleSide }),
+  laser: new THREE.MeshStandardMaterial({ color: 0x20262f, metalness: 0.8, roughness: 0.32, side: THREE.DoubleSide }),
+  ring: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+  beamCore: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }),
+  beamGlow: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  beamVol: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  slitGlow: new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  sprite: new THREE.SpriteMaterial({ map: GLOW, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.9 }),
+  mark: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
+};
+function setLamColors() {
+  const [r, g, b] = P.rgb;
+  colLam.setRGB(r, g, b, THREE.SRGBColorSpace);
+  for (const m of [M.ring, M.beamCore, M.beamGlow, M.beamVol, M.slitGlow, M.sprite]) m.color.copy(colLam);
+  fieldMat.uniforms.uCol.value.copy(colLam);
+  screenMat.uniforms.uCol.value.copy(colLam);
+  document.documentElement.style.setProperty('--lam', cssRGB(P.rgb));
+}
+function mesh(geo, mat, opts = {}) {
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = false; m.receiveShadow = false;
+  if (opts.pos) m.position.set(...opts.pos);
+  return m;
+}
+
+/* ---------- sombreadores: campo de Huygens y pantalla ---------- */
+const FIELD_VS = `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
+const FIELD_FS = `
+precision highp float;
+uniform float uPhase, uK, uLam, uPitch, uAv, uBeamR, uGain, uX1;
+uniform int uN; uniform vec3 uCol;
+varying vec3 vW;
+const float PI = 3.14159265;
+void main(){
+  float x = vW.x, z = vW.z;
+  if (x > uX1) discard;
+  float crest = 0.0, I = 0.0;
+  if (x < 0.0) {
+    float m = 1.0 - smoothstep(uBeamR - 0.04, uBeamR, abs(z));
+    float fx = smoothstep(${X_FIELD0.toFixed(2)}, ${(X_FIELD0 + 0.25).toFixed(2)}, x);
+    float e = cos(uK * x - uPhase);
+    crest = pow(0.5 + 0.5 * e, 3.0) * m * fx * 0.55;
+    I = m * fx * 0.30;
+  } else {
+    float re = 0.0, im = 0.0;
+    for (int i = 0; i < 24; i++) {
+      if (i >= uN) break;
+      float zs = (float(i) - 0.5 * float(uN - 1)) * uPitch;
+      float dz = z - zs;
+      float r = max(sqrt(x * x + dz * dz), 0.02);
+      float s = dz / r;
+      float al = PI * uAv * s / uLam;
+      float sc = abs(al) < 1e-3 ? 1.0 : sin(al) / al;
+      float w = sc * inversesqrt(r);
+      float ph = uK * r;
+      re += w * cos(ph); im += w * sin(ph);
+    }
+    float aref = float(uN) * 0.8;
+    float E = (re * cos(uPhase) + im * sin(uPhase)) / aref;
+    float fx = smoothstep(0.0, 0.10, x);
+    crest = pow(0.5 + 0.5 * clamp(E * 1.15, -1.0, 1.0), 3.0) * fx * 0.60;
+    I = min((re * re + im * im) / (aref * aref), 1.6) * fx;
+  }
+  vec3 col = uCol * (crest + 0.5 * sqrt(I)) * uGain;
+  gl_FragColor = vec4(col, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+const fieldMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uPhase: { value: 0 }, uK: { value: 2 * Math.PI / LAM_V }, uLam: { value: LAM_V }, uPitch: { value: 0.3 }, uAv: { value: 0.05 },
+    uN: { value: 2 }, uCol: { value: new THREE.Color() }, uBeamR: { value: 0.3 }, uGain: { value: 1 }, uX1: { value: 2 },
+  },
+  vertexShader: FIELD_VS, fragmentShader: FIELD_FS,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+});
+
+const SCR_FS = `
+precision highp float;
+uniform vec3 uCol; uniform float uF, uLmm, uDL, uAL, uGain; uniform int uMode, uN;
+varying vec2 vUv;
+const float PI = 3.14159265;
+float sincf(float x){ return abs(x) < 1e-4 ? 1.0 : sin(x) / x; }
+float inten(float s){
+  float en = sincf(PI * uAL * s); en *= en;
+  if (uMode == 1) return en;
+  float be = PI * uDL * s;
+  float it;
+  if (uMode == 0) { float c = cos(be); it = c * c; }
+  else { float sb = sin(be); it = abs(sb) < 1e-4 ? 1.0 : pow(sin(float(uN) * be) / (float(uN) * sb), 2.0); }
+  return it * en;
+}
+void main(){
+  float zv = (vUv.x - 0.5) * 2.0 * ${SCR_HW.toFixed(2)};
+  float yv = (vUv.y - 0.5) * ${SCR_H.toFixed(2)};
+  float s = sin(atan((zv / uF) / uLmm));          // sin θ real a la altura y = zv/uF (mm)
+  float I = clamp(inten(s), 0.0, 1.0);
+  float vert = exp(-pow(abs(yv) / 0.30, 4.0)) * (0.55 + 0.45 * exp(-pow(abs(yv) / 0.16, 2.0)));
+  float v = pow(I, 0.5) * vert;
+  vec3 base = vec3(0.050, 0.056, 0.068);
+  vec3 col = base + uCol * v * uGain + vec3(1.0) * pow(I, 8.0) * vert * 0.30;
+  gl_FragColor = vec4(col, 0.94);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+}`;
+const screenMat = new THREE.ShaderMaterial({
+  uniforms: { uCol: { value: new THREE.Color() }, uF: { value: 0.05 }, uLmm: { value: 2000 }, uDL: { value: 400 }, uAL: { value: 100 }, uGain: { value: 1.25 }, uMode: { value: 0 }, uN: { value: 2 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: SCR_FS, transparent: true, side: THREE.DoubleSide,
+});
+
+/* =====================================================================
+   6. ESCENA: MESA, LÁSER, EXPANSOR, PLACA, PANTALLA
+   ===================================================================== */
+// Luces: laboratorio oscuro
+scene.add(new THREE.HemisphereLight(0x8aa0c0, 0x06080c, 0.35));
+const key = new THREE.DirectionalLight(0xbfd0ea, 0.55); key.position.set(-2, 5, 3); scene.add(key);
+const lampL = new THREE.PointLight(0xffffff, 0.0, 3.2, 1.6); lampL.position.set(-2.25, Y_B + 0.1, 0); scene.add(lampL);
+const lampS = new THREE.PointLight(0xffffff, 0.0, 3.4, 1.6); scene.add(lampS);
+
+// mesa óptica negra perforada
+{
+  const top = mesh(new THREE.BoxGeometry(6.8, 0.08, 3.2), [M.tableSide, M.tableSide, M.table, M.tableSide, M.tableSide, M.tableSide]);
+  top.position.set(0, -0.04, 0); scene.add(top);
+  const frame = mesh(new THREE.BoxGeometry(6.9, 0.5, 3.3), M.tableSide); frame.position.set(0, -0.37, 0); scene.add(frame);
+  const floor = mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x07090c, roughness: 1, metalness: 0 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -1.6; scene.add(floor);
+  for (const [x, z] of [[-3.2, -1.5], [3.2, -1.5], [-3.2, 1.5], [3.2, 1.5]]) { const l = mesh(new THREE.BoxGeometry(0.18, 1.4, 0.18), M.tableSide); l.position.set(x, -1.0, z); scene.add(l); }
+}
+
+const clipPlane = new THREE.Plane(new V3(0, -1, 0), Y_B + 0.06);   // corte horizontal para la vista superior
+const dressed = [];                  // materiales estándar que se recortan en la vista superior
+const gLaser = new THREE.Group(), gBeam = new THREE.Group(), gPlate = new THREE.Group(), gScreen = new THREE.Group();
+scene.add(gLaser, gBeam, gPlate, gScreen);
+
+function post(x, h, parent, z = 0, r = 0.018) {
+  const p = mesh(new THREE.CylinderGeometry(r, r, h, 20), M.steel); p.position.set(x, h / 2, z); parent.add(p);
+  const b = mesh(new THREE.BoxGeometry(0.2, 0.02, 0.26), M.alu); b.position.set(x, 0.01, z); parent.add(b);
+}
+// ---- láser sintonizable ----
+{
+  const body = mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.60, 36), M.laser); body.rotation.z = Math.PI / 2; body.position.set(X_LASER, Y_B, 0); gLaser.add(body);
+  const bez = mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.04, 36), M.steel); bez.rotation.z = Math.PI / 2; bez.position.set(X_TIP - 0.01, Y_B, 0); gLaser.add(bez);
+  const ring = mesh(new THREE.CylinderGeometry(0.0765, 0.0765, 0.022, 36), M.ring); ring.rotation.z = Math.PI / 2; ring.position.set(X_TIP - 0.07, Y_B, 0); gLaser.add(ring);
+  const cap = mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.07, 28), M.alu); cap.rotation.z = Math.PI / 2; cap.position.set(X_LASER - 0.33, Y_B, 0); gLaser.add(cap);
+  const knob = mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.05, 18), M.steel); knob.position.set(X_LASER - 0.05, Y_B + 0.1, 0); gLaser.add(knob);
+  for (const dx of [-0.17, 0.12]) { post(X_LASER + dx, Y_B - 0.075, gLaser); const cl = mesh(new THREE.BoxGeometry(0.07, 0.03, 0.09), M.steel); cl.position.set(X_LASER + dx, Y_B - 0.088, 0); gLaser.add(cl); }
+  const tip = new THREE.Sprite(M.sprite); tip.scale.set(0.34, 0.34, 1); tip.position.set(X_TIP + 0.02, Y_B, 0); gLaser.add(tip);
+}
+// ---- haz colimado y expansor ----
+const beamParts = { thin: null, thinGlow: null, cone: null, vol: null, rb: -1 };
+{
+  const thin = mesh(new THREE.CylinderGeometry(0.007, 0.007, X_EXP - X_TIP, 10), M.beamCore); thin.rotation.z = Math.PI / 2; thin.position.set((X_TIP + X_EXP) / 2, Y_B, 0); gBeam.add(thin);
+  const tg = mesh(new THREE.CylinderGeometry(0.02, 0.02, X_EXP - X_TIP, 16, 1, true), M.beamGlow); tg.rotation.z = Math.PI / 2; tg.position.copy(thin.position); gBeam.add(tg);
+  const house = mesh(new THREE.CylinderGeometry(0.056, 0.056, 0.30, 28), M.alu); house.rotation.z = Math.PI / 2; house.position.set(X_EXP + 0.15, Y_B, 0); scene.add(house);
+  const lensR = mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.016, 28), M.steel); lensR.rotation.z = Math.PI / 2; lensR.position.set(X_EXP + 0.31, Y_B, 0); scene.add(lensR);
+  post(X_EXP + 0.15, Y_B - 0.056, scene);
+}
+function rebuildBeam() {
+  const span = (P.N - 1) * P.dv + P.av;
+  const rb = clamp(span / 2 + 0.13, 0.15, 1.12);
+  P.rb = rb;
+  if (Math.abs(rb - beamParts.rb) < 1e-4) return;
+  beamParts.rb = rb;
+  for (const k of ['cone', 'vol']) if (beamParts[k]) { gBeam.remove(beamParts[k]); beamParts[k].geometry.dispose(); beamParts[k] = null; }
+  const x0 = X_EXP + 0.32, x1 = -0.85;
+  const cg = new THREE.CylinderGeometry(rb, 0.012, x1 - x0, 56, 1, true); cg.rotateZ(-Math.PI / 2); cg.translate((x0 + x1) / 2, 0, 0);
+  const cone = new THREE.Mesh(cg, M.beamVol); cone.position.y = Y_B; cone.scale.y = Math.min(1, 0.42 / rb);
+  const vg = new THREE.CylinderGeometry(rb, rb, -0.006 - x1, 56, 1, true); vg.rotateZ(-Math.PI / 2); vg.translate((x1 - 0.006) / 2, 0, 0);
+  const vol = new THREE.Mesh(vg, M.beamVol); vol.position.y = Y_B; vol.scale.y = Math.min(1, 0.42 / rb);
+  gBeam.add(cone, vol); beamParts.cone = cone; beamParts.vol = vol;
+  fieldMat.uniforms.uBeamR.value = rb;
+}
+
+// ---- placa de rendijas ----
+const plateDyn = new THREE.Group(); gPlate.add(plateDyn);
+{
+  const base = mesh(new THREE.BoxGeometry(0.30, 0.08, 1.0), M.alu); base.position.set(0, 0.04, 0); gPlate.add(base);
+  for (const z of [-0.95, 0.95]) { const p = mesh(new THREE.BoxGeometry(0.05, PLATE_Y0 - 0.05, 0.05), M.steel); p.position.set(0, 0.08 + (PLATE_Y0 - 0.08) / 2, z * 0.5); gPlate.add(p); }
+}
+function addBox(w, h, d, x, y, z) {
+  const m = mesh(new THREE.BoxGeometry(w, h, d), M.plate); m.position.set(x, y, z); plateDyn.add(m);
+}
+let plateKey = '';
+function rebuildPlate() {
+  const key2 = [P.N, P.dv.toFixed(4), P.av.toFixed(4), P.mode].join('|');
+  if (key2 === plateKey) return; plateKey = key2;
+  while (plateDyn.children.length) { const c = plateDyn.children.pop(); c.geometry.dispose(); }
+  const N = P.N, zs = []; for (let i = 0; i < N; i++) zs.push((i - (N - 1) / 2) * P.dv);
+  const y0 = PLATE_Y0, y1 = PLATE_Y1, zy0 = Y_B - SLIT_HH, zy1 = Y_B + SLIT_HH, W = PLATE_W;
+  addBox(PLATE_T, y1 - zy1, W, 0, (zy1 + y1) / 2, 0);
+  addBox(PLATE_T, zy0 - y0, W, 0, (y0 + zy0) / 2, 0);
+  let zl = -W / 2;
+  for (let i = 0; i <= N; i++) {
+    const zr = i < N ? zs[i] - P.av / 2 : W / 2;
+    const w = zr - zl;
+    if (w > 1e-4) addBox(PLATE_T, 2 * SLIT_HH, w, 0, Y_B, (zl + zr) / 2);
+    if (i < N) zl = zs[i] + P.av / 2;
+  }
+  for (let i = 0; i < N; i++) {
+    const g = new THREE.BoxGeometry(PLATE_T * 0.8, 2 * SLIT_HH, Math.max(P.av, 0.006));
+    const gl = new THREE.Mesh(g, M.slitGlow); gl.position.set(0, Y_B, zs[i]); plateDyn.add(gl);
+  }
+  collectClip();
+}
+
+// ---- pantalla de proyección ----
+const rulerH = (() => { const [c, g] = makeCanvas(2048, 128); const t = canvasTex(c); return { c, g, t }; })();
+const rulerV = (() => { const [c, g] = makeCanvas(128, 1024); const t = canvasTex(c); return { c, g, t }; })();
+let screenPanel;
+{
+  const pg = new THREE.PlaneGeometry(2 * SCR_HW, SCR_H); pg.rotateY(-Math.PI / 2);
+  screenPanel = new THREE.Mesh(pg, screenMat); screenPanel.position.set(0, Y_B, 0); gScreen.add(screenPanel);
+  const fr = (w, h, d, y, z) => { const m = mesh(new THREE.BoxGeometry(w, h, d), M.alu); m.position.set(0, y, z); gScreen.add(m); };
+  fr(0.04, 0.04, 2 * SCR_HW + 0.08, Y_B + SCR_H / 2 + 0.02, 0);
+  fr(0.04, 0.04, 2 * SCR_HW + 0.08, Y_B - SCR_H / 2 - 0.02, 0);
+  fr(0.04, SCR_H, 0.04, Y_B, SCR_HW + 0.02);
+  fr(0.04, SCR_H, 0.04, Y_B, -SCR_HW - 0.02);
+  const foot = mesh(new THREE.BoxGeometry(0.34, 0.04, 1.6), M.alu); foot.position.set(0.1, 0.02, 0); gScreen.add(foot);
+  for (const z of [-0.7, 0.7]) { const p = mesh(new THREE.BoxGeometry(0.05, Y_B - SCR_H / 2 - 0.02, 0.05), M.steel); p.position.set(0.04, (Y_B - SCR_H / 2) / 2 + 0.02, z); gScreen.add(p); }
+  const pgH = new THREE.PlaneGeometry(2 * SCR_HW, 0.125); pgH.rotateY(-Math.PI / 2);
+  const rH = new THREE.Mesh(pgH, new THREE.MeshBasicMaterial({ map: rulerH.t, transparent: true, depthWrite: false })); rH.position.set(-0.004, Y_B - SCR_H / 2 + 0.0625, 0); rH.renderOrder = 2; gScreen.add(rH);
+  const pgV = new THREE.PlaneGeometry(0.125, SCR_H); pgV.rotateY(-Math.PI / 2);
+  const rV = new THREE.Mesh(pgV, new THREE.MeshBasicMaterial({ map: rulerV.t, transparent: true, depthWrite: false })); rV.position.set(-0.004, Y_B, -SCR_HW + 0.0625); rV.renderOrder = 2; gScreen.add(rV);
+}
+
+// ---- campo de ondas de Huygens (plano horizontal a la altura del eje) ----
+const fieldMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), fieldMat);
+fieldMesh.rotation.x = -Math.PI / 2; fieldMesh.renderOrder = 3;
+scene.add(fieldMesh);
+
+// ---- rayos a los máximos, envolvente, cota de L ----
+const rayGroup = new THREE.Group(); scene.add(rayGroup);
+const RAY_K = [-2, -1, 0, 1, 2];
+const rayLines = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(RAY_K.length * 6), 3)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65, depthTest: false }));
+rayLines.renderOrder = 6; rayLines.frustumCulled = false; rayGroup.add(rayLines);
+const selRay = mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 8), M.mark); selRay.renderOrder = 7; selRay.material = new THREE.MeshBasicMaterial({ color: 0xf59e0b, depthTest: false }); rayGroup.add(selRay);
+const selDot = mesh(new THREE.SphereGeometry(0.03, 14, 10), new THREE.MeshBasicMaterial({ color: 0xf59e0b, depthTest: false })); selDot.renderOrder = 7; rayGroup.add(selDot);
+const NPROF = 960;
+const profGroup = new THREE.Group(); scene.add(profGroup);
+const profI = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(NPROF * 3), 3)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthTest: false }));
+const profE = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(NPROF * 3), 3)), new THREE.LineDashedMaterial({ color: 0xbfc7d3, dashSize: 0.035, gapSize: 0.03, transparent: true, opacity: 0.85, depthTest: false }));
+for (const l of [profI, profE]) { l.renderOrder = 6; l.frustumCulled = false; profGroup.add(l); }
+const dimGroup = new THREE.Group(); scene.add(dimGroup);
+const dimLine = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(18), 3)), new THREE.LineBasicMaterial({ color: 0x8b949e, transparent: true, opacity: 0.9 }));
+dimLine.frustumCulled = false; dimGroup.add(dimLine);
+
+/* ---------- etiquetas de texto en la escena (tamaño constante en pantalla) ---------- */
+const labels = [];
+function makeLabel(px = 13) {
+  const [c, g] = makeCanvas(512, 96);
+  const tex = canvasTex(c);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+  sp.center.set(0.5, 0.5); sp.renderOrder = 20;
+  sp.userData = { c, g, tex, text: '', px };
+  scene.add(sp); labels.push(sp);
+  return sp;
+}
+function setLabel(sp, text, color = '#E5E7EB', border = '#2A303C') {
+  const u = sp.userData;
+  if (u.text === text + color) return;
+  u.text = text + color;
+  const g = u.g;
+  g.clearRect(0, 0, 512, 96);
+  let fs = 44; g.font = `500 ${fs}px ${MONO}`;
+  const tw = g.measureText(text).width;
+  if (tw > 468) { fs = Math.max(20, Math.floor(44 * 468 / tw)); g.font = `500 ${fs}px ${MONO}`; }
+  const w = Math.min(500, g.measureText(text).width + 30);
+  const x0 = (512 - w) / 2;
+  g.fillStyle = 'rgba(12,14,18,0.88)'; g.fillRect(x0, 10, w, 76);
+  g.strokeStyle = border; g.lineWidth = 3; g.strokeRect(x0, 10, w, 76);
+  g.fillStyle = color; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText(text, 256, 50);
+  u.tex.needsUpdate = true;
+}
+const lbl = { lam: makeLabel(12), plate: makeLabel(12), L: makeLabel(12), scr: makeLabel(12), sel: makeLabel(12) };
+
+/* =====================================================================
+   7. ACTUALIZACIÓN DE LA ESCENA SEGÚN LOS PARÁMETROS
+   ===================================================================== */
+const dirty = { scene: true, panels: true, charts: true };
+let clipOn = false;
+const DRESSED = [M.steel, M.alu, M.black, M.plate, M.laser];
+function setClip(on) {
+  if (on === clipOn) return; clipOn = on;
+  for (const m of DRESSED) { m.clippingPlanes = on ? [clipPlane] : null; m.needsUpdate = true; }
+}
+function collectClip() { /* los materiales son compartidos: no hay nada que reasignar al reconstruir */ }
+
+const zOfY = (ymm) => P.f0 * ymm;     // posición visual en la pantalla de una distancia real y (mm): lineal y fija
+function drawRulers() {
+  const lam = P.rgb;
+  { // regla horizontal: mm reales sobre el eje y de la pantalla
+    const { c, g, t } = rulerH, W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = 'rgba(9,11,15,.82)'; g.fillRect(0, 0, W, H);
+    const step = niceStep(2 * P.yW, 9), minor = minorOf(step);
+    const n0 = Math.ceil(-P.yW / minor - 1e-9), n1 = Math.floor(P.yW / minor + 1e-9);
+    g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.font = `600 26px ${MONO}`;
+    for (let k = n0; k <= n1; k++) {
+      const y = k * minor, z = zOfY(y);
+      if (!Number.isFinite(z) || Math.abs(z) > SCR_HW) continue;
+      const x = (z / SCR_HW * 0.5 + 0.5) * W;
+      const q = y / step, major = Math.abs(q - Math.round(q)) < 1e-6;
+      g.fillStyle = major ? '#E5E7EB' : 'rgba(201,209,217,.6)';
+      g.fillRect(Math.round(x) - 1, 0, major ? 3 : 2, major ? 52 : 28);
+      if (major && x > 160 && x < W - 60) { g.fillStyle = '#E5E7EB'; g.fillText(fsig(y, 3).replace('−', '-'), x, 92); }
+    }
+    g.fillStyle = cssRGB(lam); g.textAlign = 'right'; g.font = `600 24px ${MONO}`; g.fillText('mm', W - 10, 120);
+    t.needsUpdate = true;
+  }
+  { // regla vertical: altura sobre el eje óptico (misma escala local f0)
+    const { c, g, t } = rulerV, W = c.width, H = c.height;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = 'rgba(9,11,15,.82)'; g.fillRect(0, 0, W, H);
+    const halfMM = (SCR_H / 2) / P.f0, step = niceStep(2 * halfMM, 8), minor = minorOf(step);
+    g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = `600 22px ${MONO}`;
+    for (let k = Math.ceil(-halfMM / minor); k <= Math.floor(halfMM / minor); k++) {
+      const y = k * minor, py = (0.5 - (y * P.f0) / SCR_H) * H;
+      const q = y / step, major = Math.abs(q - Math.round(q)) < 1e-6;
+      g.fillStyle = major ? '#E5E7EB' : 'rgba(201,209,217,.6)';
+      if (py > H * 0.86) continue;
+      g.fillRect(W - (major ? 50 : 26), Math.round(py) - 1, major ? 50 : 26, major ? 3 : 2);
+      if (major && py > 24 && py < H * 0.84) { g.fillStyle = '#E5E7EB'; g.fillText(fsig(y, 3).replace('−', '-'), 6, py - 14); }
+    }
+    t.needsUpdate = true;
+  }
+}
+
+let geoKey = '';
+function applyParams() {
+  const u = fieldMat.uniforms;
+  rebuildBeam();
+  rebuildPlate();
+  u.uPitch.value = P.dv; u.uAv.value = P.av; u.uN.value = P.N; u.uLam.value = P.lamV; u.uK.value = 2 * Math.PI / P.lamV; u.uX1.value = P.Lv;
+  fieldMesh.scale.set(P.Lv - X_FIELD0, 2.6, 1); fieldMesh.position.set((X_FIELD0 + P.Lv) / 2, Y_B, 0);
+  gScreen.position.x = P.Lv;
+  lampL.color.copy(colLam); lampS.color.copy(colLam); lampS.position.set(P.Lv - 0.7, Y_B + 0.1, 0);
+  lampL.intensity = 0.9; lampS.intensity = 1.4;
+  const su = screenMat.uniforms;
+  su.uF.value = P.f0; su.uLmm.value = P.L * 1000; su.uDL.value = P.single ? 0 : P.d / P.lam; su.uAL.value = P.a / P.lam; su.uN.value = P.N; su.uMode.value = P.mode === 'double' ? 0 : P.mode === 'single' ? 1 : 2;
+  // rayos a los máximos m = 0, ±1, ±2
+  const pos = rayLines.geometry.attributes.position.array;
+  RAY_K.forEach((k, i) => {
+    const r = P.rows[k + 4], ok = r.valid && Number.isFinite(r.zv) && Math.abs(r.zv) <= SCR_HW * 1.02;
+    const o = i * 6;
+    pos[o] = 0.02; pos[o + 1] = Y_B; pos[o + 2] = 0;
+    pos[o + 3] = ok ? P.Lv : 0.02; pos[o + 4] = Y_B; pos[o + 5] = ok ? r.zv : 0;
+  });
+  rayLines.geometry.attributes.position.needsUpdate = true;
+  rayLines.material.color.copy(colLam).lerp(new THREE.Color(1, 1, 1), 0.55);
+  // rayo resaltado
+  const sr = S.sel === null ? null : P.rows[S.sel + 4];
+  const okSel = sr && sr.valid && Number.isFinite(sr.zv) && Math.abs(sr.zv) <= SCR_HW * 1.05;
+  selRay.visible = selDot.visible = !!okSel;
+  if (okSel) {
+    const a = new V3(0.02, Y_B, 0), b = new V3(P.Lv, Y_B, sr.zv), dir = b.clone().sub(a), len = dir.length();
+    selRay.position.copy(a).addScaledVector(dir, 0.5); selRay.scale.set(1, len, 1);
+    selRay.quaternion.setFromUnitVectors(new V3(0, 1, 0), dir.normalize());
+    selDot.position.copy(b);
+  }
+  // perfil I(y) y envolvente sobre la pantalla (curva en el plano del eje)
+  const pI = profI.geometry.attributes.position.array, pE = profE.geometry.attributes.position.array;
+  for (let i = 0; i < NPROF; i++) {
+    const z = -SCR_HW + 2 * SCR_HW * i / (NPROF - 1);
+    const s = sOfY(z / P.f0);                    // sin θ real de ese punto de la pantalla
+    const I = Ireal(s), E = P.single ? I : Ienv(s);
+    pI[i * 3] = P.Lv - 0.03 - 0.62 * I; pI[i * 3 + 1] = Y_B + 0.014; pI[i * 3 + 2] = z;
+    pE[i * 3] = P.Lv - 0.03 - 0.62 * E; pE[i * 3 + 1] = Y_B + 0.014; pE[i * 3 + 2] = z;
+  }
+  profI.geometry.attributes.position.needsUpdate = true; profE.geometry.attributes.position.needsUpdate = true;
+  profE.computeLineDistances();
+  profI.material.color.copy(colLam).lerp(new THREE.Color(1, 1, 1), 0.35);
+  profE.visible = !P.single;
+  // cota de L
+  const dp = dimLine.geometry.attributes.position.array;
+  const zD = Z_DIM - 0.1, yD = 0.012;
+  const segs = [[0, yD, zD, P.Lv, yD, zD], [0, yD, zD - 0.06, 0, yD, zD + 0.06], [P.Lv, yD, zD - 0.06, P.Lv, yD, zD + 0.06]];
+  segs.forEach((s, i) => { for (let j = 0; j < 6; j++) dp[i * 6 + j] = s[j]; });
+  dimLine.geometry.attributes.position.needsUpdate = true;
+  drawRulers();
+  // etiquetas
+  setLabel(lbl.lam, `λ = ${trimTo(S.lam, 1, 0)} nm`, cssRGB(P.rgb, 1.0), '#2A303C');
+  lbl.lam.position.set(X_LASER, Y_B + 0.24, -0.38);
+  const pl = P.single ? `a = ${fx(S.a, 3)} mm` : P.grat ? `N=${P.N} · d ${fx(S.d, 3)} · a ${fx(S.a, 3)} mm` : `d ${fx(S.d, 3)} · a ${fx(S.a, 3)} mm`;
+  setLabel(lbl.plate, pl, '#E5E7EB'); lbl.plate.position.set(0, PLATE_Y1 + 0.08, -1.40);
+  setLabel(lbl.L, `L = ${fx(S.L, 2)} m`, '#C9D1D9'); lbl.L.position.set(P.Lv / 2, 0.05, Z_DIM + 0.1);
+  setLabel(lbl.scr, `ventana ±${fsig(P.yW, 3)} mm`, '#F59E0B', '#5A3D0A'); lbl.scr.position.set(P.Lv, PLATE_Y1 + 0.18, -1.40);
+  if (okSel) {
+    setLabel(lbl.sel, `${P.single ? 'p' : 'm'} = ${S.sel > 0 ? '+' : S.sel < 0 ? '−' : ''}${Math.abs(S.sel)} · y = ${fx(sr.y, 2)} mm`, '#F59E0B', '#5A3D0A');
+    lbl.sel.position.set(P.Lv - 0.55, Y_B + 0.05, sr.zv + (sr.zv >= 0 ? 0.12 : -0.12));
+  }
+  lbl.sel.visible = !!okSel;
+  setLamColors();
+}
+
+/* =====================================================================
+   8. CÁMARA: PRESETS Y TRANSICIONES
+   ===================================================================== */
+let camMode = 'iso', camTween = null;
+const tanHalf = () => Math.tan(THREE.MathUtils.degToRad(persp.fov / 2));
+const ovl = { top: 70, bottom: 0 };
+function measureOverlays() {
+  const h = canvas.clientHeight || 1, cr = canvas.getBoundingClientRect();
+  ovl.top = clamp($('#status').getBoundingClientRect().bottom - cr.top + 8, 0, h * 0.22);
+}
+function frameFit() {
+  const h = CH;
+  return { avail: clamp((h - ovl.top - ovl.bottom) / h, 0.5, 1), off: (ovl.bottom - ovl.top) / 2 / h };
+}
+function perspFrame(center, dirv, spanW, spanH) {
+  const th = tanHalf(), { avail, off } = frameFit();
+  const dir = dirv.clone().normalize();
+  const d = Math.max(spanW / (2 * th * aspect), spanH / (2 * th * avail));
+  const up = new V3(0, 1, 0).addScaledVector(dir, -dir.y).normalize();
+  const target = center.clone().addScaledVector(up, -off * 2 * d * th);
+  return { target, pos: target.clone().addScaledVector(dir, d) };
+}
+function frameFor(mode) {
+  const th = tanHalf();
+  if (mode === 'top') {
+    const x0 = -2.95, x1 = P.Lv + 0.42, z0 = -1.72, z1 = 1.72;
+    const { avail, off } = frameFit();
+    const halfW = Math.max((x1 - x0) / 2 * 1.03, (z1 - z0) / 2 * 1.04 / avail * aspect);
+    const halfH = halfW / aspect, d = halfW / (th * aspect);
+    const target = new V3((x0 + x1) / 2, 0, (z0 + z1) / 2 + off * 2 * halfH);
+    return { ortho: true, halfW, target, pos: target.clone().add(new V3(0, d, d * 0.02)), orthoPos: target.clone().add(new V3(0, d, 0)) };
+  }
+  if (mode === 'screen') return perspFrame(new V3(P.Lv, Y_B, 0), new V3(-1, 0.03, 0.0001), 2.38, 1.34);
+  return perspFrame(new V3(-0.35, 0.42, 0.05), new V3(-0.52, 0.62, 1), 6.7, 3.1);
+}
+function applyCamEffects() {
+  const top = camMode === 'top' || camMode === 'top-free', scr = camMode === 'screen';
+  setClip(top);
+  for (const o of [gPlate, gBeam, fieldMesh, rayGroup, profGroup, dimGroup]) o.userData.hide = scr;
+}
+function setCamMode(mode) {
+  camMode = mode;
+  const visible = mode === 'top-free' ? 'top' : mode;
+  $$('.cam-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === visible)));
+  applyCamEffects();
+}
+function setActiveCam(c) { activeCam = c; renderPass.camera = c; $('#hint-2d').classList.toggle('show', c === ortho); }
+function applyOrthoFrustum() {
+  const hw = orthoHalfW, hh = hw / aspect;
+  ortho.left = -hw; ortho.right = hw; ortho.top = hh; ortho.bottom = -hh; ortho.updateProjectionMatrix();
+}
+function flyTo(mode, dur = 1.1) {
+  const wasTop = activeCam === ortho;
+  setCamMode(mode);
+  const F = frameFor(mode);
+  if (activeCam === ortho) {
+    const d = (orthoHalfW / ortho.zoom) / (tanHalf() * aspect);
+    ctlP.target.copy(ctlO.target);
+    persp.position.copy(ctlO.target).add(new V3(0, 1, 0.02).normalize().multiplyScalar(d));
+    persp.lookAt(ctlP.target);
+    ctlO.enabled = false; setActiveCam(persp);
+  }
+  const s0 = new THREE.Spherical().setFromVector3(new V3().subVectors(persp.position, ctlP.target));
+  const s1 = new THREE.Spherical().setFromVector3(new V3().subVectors(F.pos, F.target));
+  if (wasTop) s0.theta = 0;
+  const dth = s1.theta - s0.theta;
+  if (dth > Math.PI) s1.theta -= 2 * Math.PI; else if (dth < -Math.PI) s1.theta += 2 * Math.PI;
+  camTween = { t: 0, dur: REDUCED ? 0.001 : dur, t0: ctlP.target.clone(), t1: F.target, s0, s1, F };
+  ctlP.enabled = false;
+}
+const _sph = new THREE.Spherical();
+function stepCamTween(dt) {
+  const tw = camTween;
+  tw.t = Math.min(1, tw.t + dt / tw.dur);
+  const k = easeIO(tw.t);
+  _sph.set(lerp(tw.s0.radius, tw.s1.radius, k), lerp(tw.s0.phi, tw.s1.phi, k), lerp(tw.s0.theta, tw.s1.theta, k));
+  ctlP.target.lerpVectors(tw.t0, tw.t1, k);
+  persp.position.setFromSpherical(_sph).add(ctlP.target);
+  persp.lookAt(ctlP.target);
+  if (tw.t >= 1) {
+    camTween = null;
+    if (tw.F.ortho) {
+      orthoHalfW = tw.F.halfW; ortho.zoom = 1;
+      ortho.position.copy(tw.F.orthoPos); ctlO.target.copy(tw.F.target); ortho.lookAt(tw.F.target);
+      applyOrthoFrustum(); setActiveCam(ortho); ctlO.enabled = true; ctlO.update();
+    } else { ctlP.enabled = true; ctlP.update(); }
+  }
+}
+function followFrame(dt) {           // mantiene el encuadre de los presets al cambiar el tamaño del visor o L
+  if (camTween) return;
+  const k = 1 - Math.exp(-dt * 3.2);
+  if ((camMode === 'iso' || camMode === 'screen') && activeCam === persp) {
+    const F = frameFor(camMode);
+    ctlP.target.lerp(F.target, k); persp.position.lerp(F.pos, k);
+  } else if (camMode === 'top' && activeCam === ortho) {
+    const F = frameFor('top');
+    ctlO.target.lerp(F.target, k); ortho.position.set(ctlO.target.x, F.orthoPos.y, ctlO.target.z);
+    orthoHalfW = lerp(orthoHalfW, F.halfW, k); ortho.zoom = lerp(ortho.zoom, 1, k);
+    applyOrthoFrustum();
+  }
+}
+ctlP.addEventListener('start', () => { if (!camTween) setCamMode('free'); });
+ctlO.addEventListener('start', () => { if (!camTween) setCamMode('top-free'); });
+
+function resize() {
+  const dd = Math.min(window.devicePixelRatio || 1, 2);
+  if (dd !== DPR) { DPR = dd; renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR()); }
+  const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  aspect = w / h; CH = h;
+  persp.aspect = aspect; persp.updateProjectionMatrix();
+  applyOrthoFrustum();
+  measureOverlays();
+}
+let resizeQueued = false;
+const stageRO = new ResizeObserver(() => {
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => { resizeQueued = false; resize(); sizeCharts(); dirty.charts = true; });
+});
+stageRO.observe(stage); stageRO.observe(canvas);
+
+const _lp = new V3();
+function scaleLabels() {
+  const cssH = CH;
+  for (const sp of labels) {
+    if (!sp.visible) continue;
+    let wpp;
+    if (activeCam === ortho) wpp = (ortho.top - ortho.bottom) / ortho.zoom / cssH;
+    else { sp.getWorldPosition(_lp); wpp = 2 * _lp.distanceTo(persp.position) * tanHalf() / cssH; }
+    const h = sp.userData.px * 96 / 56 * wpp;
+    sp.scale.set(h * 512 / 96, h, 1);
+  }
+}
+
+/* =====================================================================
+   9. INTERFAZ: CONTROLES, PANELES Y GRÁFICAS 2D
+   ===================================================================== */
+const CTRL = { lam: { dec: [1, 0] }, d: { dec: [3, 2] }, a: { dec: [3, 2] }, L: { dec: [2, 2] }, N: { dec: [0, 0] } };
+function limOf(key) {
+  if (key === 'a') return [LIM.a[0], S.mode === 'single' ? LIM.a[1] : Math.max(LIM.a[0], Math.min(LIM.a[1], S.d * A_RATIO))];
+  return LIM[key];
+}
+function setParam(key, v) {
+  if (!Number.isFinite(v)) return;
+  const [lo, hi] = limOf(key);
+  S[key] = key === 'N' ? Math.round(clamp(v, lo, hi)) : clamp(v, lo, hi);
+  if (key === 'd' && S.mode !== 'single' && S.a > S.d * A_RATIO) S.a = Math.max(LIM.a[0], S.d * A_RATIO);
+  onParams();
+}
+function onParams() {
+  if (S.mode !== 'single' && S.a > S.d * A_RATIO) S.a = Math.max(LIM.a[0], S.d * A_RATIO);
+  solve();
+  syncInputs();
+  dirty.scene = dirty.panels = dirty.charts = true;
+}
+function syncInputs() {
+  for (const key of Object.keys(CTRL)) {
+    const rng = $('#rng-' + key), num = $('#num-' + key), [lo, hi] = limOf(key);
+    rng.max = String(hi); num.max = String(hi);
+    rng.value = S[key];
+    if (key !== 'lam') rng.style.setProperty('--p', (clamp((S[key] - lo) / Math.max(hi - lo, 1e-9), 0, 1) * 100).toFixed(2) + '%');
+    if (document.activeElement !== num) num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]);
+  }
+  $('#ctrl-d').classList.toggle('off', S.mode === 'single');
+  $('#ctrl-N').hidden = S.mode !== 'grating';
+  $('#a-lock').classList.toggle('on', S.mode !== 'single' && S.a >= S.d * A_RATIO - 1e-9);
+  $('#a-lock').textContent = S.mode === 'single' ? 'libre' : 'a < d';
+  $$('#presets .preset').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(parseFloat(b.dataset.lam) - S.lam) < 0.05)));
+  $$('#mode-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
+}
+function buildSpectrum() {
+  const stops = [];
+  for (let l = 380; l <= 750; l += 10) stops.push(`${cssRGB(lamToRGB(l))} ${((l - 380) / 370 * 100).toFixed(1)}%`);
+  $('#rng-lam').style.setProperty('--spec', `linear-gradient(90deg,${stops.join(',')})`);
+  const box = $('#presets');
+  for (const p of PRESETS) {
+    const b = document.createElement('button');
+    b.className = 'preset'; b.dataset.lam = p.lam; b.setAttribute('aria-pressed', 'false');
+    b.style.setProperty('--pc', cssRGB(lamToRGB(p.lam)));
+    b.innerHTML = `<i></i>${p.name}<b>${p.lam}</b>`;
+    b.title = `${p.name}: ${p.lam} nm`;
+    b.addEventListener('click', () => setParam('lam', p.lam));
+    box.appendChild(b);
+  }
+}
+function setMode(m) {
+  if (!['double', 'single', 'grating'].includes(m)) return;
+  S.mode = m; S.sel = null;
+  onParams();
+}
+function bindControls() {
+  for (const key of Object.keys(CTRL)) {
+    const rng = $('#rng-' + key), num = $('#num-' + key);
+    rng.addEventListener('input', () => setParam(key, parseFloat(rng.value)));
+    num.addEventListener('input', () => {
+      const v = parseFloat(num.value), [lo, hi] = limOf(key);
+      if (Number.isFinite(v) && v >= lo && v <= hi) setParam(key, v);
+    });
+    num.addEventListener('change', () => {
+      const v = parseFloat(num.value);
+      setParam(key, Number.isFinite(v) ? v : S[key]);
+      num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]);
+    });
+    num.addEventListener('blur', () => { num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]); });
+    num.addEventListener('keydown', (e) => { if (e.key === 'Enter') num.blur(); });
+  }
+  $$('#mode-seg button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  $$('.cam-btn').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
+  $$('#speed-seg button').forEach((b) => b.addEventListener('click', () => setSpeed(b.dataset.speed)));
+  $('#btn-pause').addEventListener('click', togglePause);
+  $$('.tog').forEach((b) => b.addEventListener('click', () => toggleLayer(b.dataset.tog)));
+  $('#max-body').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-k]'); if (!tr || tr.classList.contains('off')) return;
+    selectOrder(parseInt(tr.dataset.k, 10));
+  });
+  window.addEventListener('keydown', onKey);
+}
+function selectOrder(k) {
+  S.sel = S.sel === k ? null : k;
+  dirty.scene = dirty.panels = dirty.charts = true;
+}
+function bindChrome() {
+  const tabs = $$('[role="tab"]');
+  const select = (tab) => tabs.forEach((x) => {
+    const on = x === tab; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+    $('#' + x.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      select(next); next.focus();
+    });
+  });
+  const dlg = $('#help-dlg');
+  $('#btn-help').addEventListener('click', () => dlg.showModal());
+  $('#help-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+function setSpeed(v) {
+  const n = parseFloat(v);
+  if (![1, 0.25, 0.1].includes(n)) return;
+  S.speed = n;
+  $$('#speed-seg button').forEach((b) => b.setAttribute('aria-pressed', String(parseFloat(b.dataset.speed) === n)));
+}
+function togglePause() {
+  S.paused = !S.paused;
+  $('#btn-pause').setAttribute('aria-pressed', String(S.paused));
+  $('#pause-txt').textContent = S.paused ? 'Reanudar' : 'Pausar';
+  $('#ico-pause').innerHTML = S.paused ? '<path d="M3 1.5v9l7.5-4.5z"/>' : '<rect x="2" y="1.5" width="3" height="9" rx=".5"/><rect x="7" y="1.5" width="3" height="9" rx=".5"/>';
+  $('#tread').classList.toggle('frozen', S.paused);
+}
+function toggleLayer(k) {
+  S[k] = !S[k];
+  $$(`.tog[data-tog="${k}"]`).forEach((b) => b.setAttribute('aria-pressed', String(S[k])));
+  dirty.charts = true;
+}
+function onKey(e) {
+  if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
+  const t = e.target, tag = t.tagName;
+  if (t.getAttribute && t.getAttribute('role') === 'tab') return;
+  if (tag === 'INPUT') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === ' ' || k === 'Spacebar') { e.preventDefault(); togglePause(); }
+  else if (k === '1') flyTo('top');
+  else if (k === '2') flyTo('iso');
+  else if (k === '3') flyTo('screen');
+  else if (k === 'ArrowLeft') { e.preventDefault(); setParam('lam', S.lam - (e.shiftKey ? 1 : 5)); }
+  else if (k === 'ArrowRight') { e.preventDefault(); setParam('lam', S.lam + (e.shiftKey ? 1 : 5)); }
+  else if (k === 'ArrowUp') { e.preventDefault(); if (S.mode !== 'single') setParam('d', S.d + (e.shiftKey ? 0.005 : 0.02)); }
+  else if (k === 'ArrowDown') { e.preventDefault(); if (S.mode !== 'single') setParam('d', S.d - (e.shiftKey ? 0.005 : 0.02)); }
+  else if (k === 'm' || k === 'M') setMode(['double', 'single', 'grating'][(['double', 'single', 'grating'].indexOf(S.mode) + 1) % 3]);
+  else if (k === 'w' || k === 'W') toggleLayer('waves');
+  else if (k === 'r' || k === 'R') toggleLayer('rays');
+  else if (k === 'e' || k === 'E') toggleLayer('env');
+}
+
+/* ---------- paneles de datos ---------- */
+const signed = (k) => (k > 0 ? '+' + k : k < 0 ? '−' + Math.abs(k) : '0');
+function updatePanels() {
+  const single = P.single;
+  set('status-txt', single ? 'Rendija simple' : P.grat ? `Red de ${P.N} rendijas` : 'Doble rendija');
+  $('#status-lam').innerHTML = `<i></i>${trimTo(S.lam, 1, 0)} nm`;
+  set('lam-read', trimTo(S.lam, 1, 0));
+  set('pho-lam', trimTo(S.lam, 1, 0) + ' nm');
+  $('#eq-live').innerHTML = single
+    ? `<i>a</i> sin<i>θ</i> = <i>p</i>λ · semiancho <b>${fx(P.dy, 2)}</b> mm`
+    : `<i>d</i> sin<i>θ</i> = <i>m</i>λ · Δ<i>y</i> = <b>${fx(P.dy, 2)}</b> mm`;
+  // diagnóstico
+  set('d-dy', fsig(P.dy, 3));
+  $('#d-cap').innerHTML = single ? 'semiancho del lóbulo<br/>central λL/a' : 'separación interfranja<br/>Δy = λL/d';
+  set('d-nl', single ? 'Mínimos visibles' : 'Máximos visibles');
+  set('d-nvis', String(P.nVis));
+  set('d-win', fsig(P.yW, 3));
+  set('d-ratio', single ? '—' : fx(S.d / S.a, 2));
+  // tabla de órdenes
+  set('th-m', single ? 'p' : 'm');
+  const body = $('#max-body');
+  body.innerHTML = P.rows.map((r) => {
+    if (!r.valid) return `<tr class="off" data-k="${r.k}"><td class="hp">${signed(r.k)}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    const cls = ['clk'];
+    if (S.sel === r.k) cls.push('sel');
+    if (!r.inWin) cls.push('far');
+    return `<tr class="${cls.join(' ')}" data-k="${r.k}" title="${r.absent ? 'Orden ausente: coincide con un mínimo de difracción' : r.inWin ? 'Clic: resaltar el rayo en 3D' : 'Fuera de la ventana de la pantalla'}"><td class="hp">${signed(r.k)}</td><td>${fx(r.theta, 3)}</td><td class="hp">${fx(r.y, 2)}</td><td>${fx(r.yApprox, 2)}</td><td>${fx(r.I, 3)}</td></tr>`;
+  }).join('');
+  set('max-note', single ? 'Mínimos de difracción p: a sin θ = p λ. Clic en una fila para resaltar su rayo en 3D.' : (S.sel === null ? 'Haz clic en una fila para resaltar su rayo en la escena 3D.' : 'Rayo resaltado en la escena 3D. Pulsa de nuevo la fila para quitarlo.'));
+  // difracción
+  const D = P.diff;
+  set('f-w0', fsig(D.w0, 3)); set('f-th1', fsig(D.th1, 3));
+  set('f-y1', fsig(D.y[0], 3)); set('f-y2', fsig(D.y[1], 3)); set('f-y3', fsig(D.y[2], 3));
+  set('f-nc', single ? '—' : String(D.nc));
+  set('f-miss', single ? '—' : (D.miss.length ? D.miss.slice(0, 6).map((m) => '±' + m).join(', ') + (D.miss.length > 6 ? '…' : '') : 'ninguno'));
+  if (P.grat) {
+    set('f-rl', fsig(1e3 * P.lam / (P.N * P.d), 3));
+    $('#f-rl-t').innerHTML = 'Anchura de pico <span class="v">λ</span>/(<span class="v">N d</span>)';
+    $('#f-rl2-t').innerHTML = 'Poder resolutor <span class="v">R</span> = <span class="v">m N</span> (<span class="v">m</span> = 1)';
+    set('f-rl2', String(P.N)); set('f-rl2-u', '');
+    set('f-note', `Δλ mínimo resoluble en m = 1: ${fsig(S.lam / P.N, 3)} nm.`);
+  } else {
+    set('f-rl', fsig(1e3 * P.lam / P.a, 3));
+    $('#f-rl-t').innerHTML = 'Criterio de Rayleigh <span class="v">θ</span><sub>R</sub> = <span class="v">λ</span>/<span class="v">a</span>';
+    $('#f-rl2-t').textContent = 'Separación mínima en pantalla';
+    set('f-rl2', fsig(D.y[0], 3)); set('f-rl2-u', 'mm');
+    set('f-note', 'Dos fuentes de igual brillo se resuelven si el máximo de una cae sobre el primer mínimo de la otra.');
+  }
+  // telemetría
+  set('t-f', fsig(P.f / 1e12, 4)); set('t-E', fsig(P.E, 4)); set('t-k', fsig(P.k / 1e6, 4));
+  set('t-EJ', fsig(P.EJ * 1e19, 4)); set('t-w', fsig(2 * Math.PI * P.f / 1e15, 4)); set('t-T', fsig(1e15 / P.f, 4));
+  set('t-p', fsig(H_PLANCK / P.lam * 1e27, 4)); set('t-ph', fsig(1e-3 / P.EJ / 1e15, 4));
+  set('t-fr', single ? '—' : fsig(1 / P.dy, 3)); set('t-dr', single ? '—' : fsig(P.lam * 1e6, 4)); set('t-thmax', fsig(P.thMax, 3));
+}
+
+/* ---------- gráficas: perfil de intensidad y franja proyectada ---------- */
+const prof = { cv: $('#prof-cv') }, pho = { cv: $('#pho-cv') };
+const PAD = { l: 44, r: 14, t: 10, b: 24 };
+function fitCanvas(o) {
+  const r = o.cv.getBoundingClientRect();
+  o.w = Math.max(1, Math.round(r.width)); o.h = Math.max(1, Math.round(r.height));
+  o.cv.width = Math.round(o.w * DPR); o.cv.height = Math.round(o.h * DPR);
+  o.g = o.cv.getContext('2d'); o.g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  o.cache = null;
+}
+function sizeCharts() { fitCanvas(prof); fitCanvas(pho); }
+const xOfY = (y, x0, x1) => x0 + (y + P.yW) / (2 * P.yW) * (x1 - x0);
+function drawAxisX(g, x0, x1, ytop, ybase, grid) {
+  const step = niceStep(2 * P.yW, 8), minor = minorOf(step);
+  g.font = `500 10px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'top';
+  for (let k = Math.ceil(-P.yW / minor - 1e-9); k <= Math.floor(P.yW / minor + 1e-9); k++) {
+    const y = k * minor, x = xOfY(y, x0, x1), q = y / step, major = Math.abs(q - Math.round(q)) < 1e-6;
+    if (major && grid) { g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(x) + 0.5, ytop); g.lineTo(Math.round(x) + 0.5, ybase); g.stroke(); }
+    g.strokeStyle = major ? '#8B949E' : '#4B5563'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(Math.round(x) + 0.5, ybase); g.lineTo(Math.round(x) + 0.5, ybase + (major ? 5 : 3)); g.stroke();
+    if (major) { g.fillStyle = '#8B949E'; g.fillText(fsig(y, 3), x, ybase + 7); }
+  }
+}
+function drawProfile() {
+  const o = prof, g = o.g; if (!g) return;
+  const W = o.w, H = o.h, x0 = PAD.l, x1 = W - PAD.r, y0 = PAD.t, y1 = H - PAD.b;
+  g.clearRect(0, 0, W, H);
+  const Yv = (I) => y1 - I * (y1 - y0) * 0.96;
+  g.font = `500 10px ${MONO}`; g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+    const y = Math.round(Yv(v)) + 0.5;
+    g.strokeStyle = v === 0 ? '#3A4150' : 'rgba(255,255,255,.06)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    g.fillStyle = '#8B949E'; g.fillText(v === 0 ? '0' : v.toFixed(2), x0 - 6, y);
+  }
+  drawAxisX(g, x0, x1, y0, y1, true);
+  g.save(); g.fillStyle = '#6B7280'; g.font = `500 10px ${MONO}`; g.textAlign = 'right'; g.textBaseline = 'alphabetic'; g.fillText('y (mm)', x1, y0 + 9); g.restore();
+  const n = Math.max(2, Math.round((x1 - x0) * DPR * 1.5));
+  const yy = (i) => -P.yW + 2 * P.yW * i / n;
+  // envolvente de difracción
+  if (!P.single) {
+    g.setLineDash([4, 3]); g.strokeStyle = 'rgba(191,199,211,.75)'; g.lineWidth = 1.2; g.beginPath();
+    for (let i = 0; i <= n; i++) { const X = x0 + (x1 - x0) * i / n, Y = Yv(Ienv(sOfY(yy(i)))); if (i) g.lineTo(X, Y); else g.moveTo(X, Y); }
+    g.stroke(); g.setLineDash([]);
+  }
+  // curva de intensidad
+  const col = P.rgb;
+  g.beginPath();
+  for (let i = 0; i <= n; i++) { const X = x0 + (x1 - x0) * i / n, Y = Yv(Ireal(sOfY(yy(i)))); if (i) g.lineTo(X, Y); else g.moveTo(X, Y); }
+  g.lineTo(x1, Yv(0)); g.lineTo(x0, Yv(0)); g.closePath(); g.fillStyle = cssRGBA(col, 0.15); g.fill();
+  g.beginPath();
+  for (let i = 0; i <= n; i++) { const X = x0 + (x1 - x0) * i / n, Y = Yv(Ireal(sOfY(yy(i)))); if (i) g.lineTo(X, Y); else g.moveTo(X, Y); }
+  g.strokeStyle = cssRGB(col, 1.15); g.lineWidth = 1.6; g.stroke();
+  // marcas de orden
+  g.font = `500 9.5px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  for (const r of P.rows) {
+    if (!r.valid || !r.inWin) continue;
+    const x = xOfY(r.y, x0, x1), sel = S.sel === r.k;
+    g.strokeStyle = sel ? '#F59E0B' : 'rgba(229,231,235,.35)'; g.lineWidth = sel ? 1.5 : 1;
+    g.beginPath(); g.moveTo(Math.round(x) + 0.5, y1); g.lineTo(Math.round(x) + 0.5, sel ? y0 : y1 - 7); g.stroke();
+    if (Math.abs(r.k) <= 2 || sel) { g.fillStyle = sel ? '#F59E0B' : '#9CA3AF'; g.fillText(signed(r.k), x, y1 - 10); }
+  }
+  // cursor
+  if (S.hoverY !== null) {
+    const x = xOfY(S.hoverY, x0, x1) + 0.5;
+    g.strokeStyle = 'rgba(245,158,11,.8)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke();
+    const I = Ireal(sOfY(S.hoverY));
+    g.fillStyle = '#F59E0B'; g.beginPath(); g.arc(x, Yv(I), 3, 0, Math.PI * 2); g.fill();
+    $('#prof-read').innerHTML = `<span class="v">y</span> = <b>${fx(S.hoverY, 2)}</b> mm · <span class="v">I</span>/<span class="v">I</span><sub>0</sub> = <b>${fx(I, 3)}</b>`;
+  } else $('#prof-read').textContent = '';
+  $('#lg-env').style.display = P.single ? 'none' : '';
+}
+function drawPhoto() {
+  const o = pho, g = o.g; if (!g) return;
+  const W = o.w, H = o.h, x0 = PAD.l, x1 = W - PAD.r, y0 = PAD.t, yb = H - PAD.b - 2;
+  g.clearRect(0, 0, W, H);
+  const key = [S.lam, S.d, S.a, S.L, S.N, S.mode, W, H, DPR].join('|');
+  if (!o.cache || o.cache.key !== key) {
+    const wpx = Math.max(2, Math.round((x1 - x0) * DPR)), hpx = Math.max(2, Math.round((yb - y0) * DPR));
+    const [cv, cg] = makeCanvas(wpx, hpx);
+    const img = cg.createImageData(wpx, hpx), d = img.data, col = P.rgb;
+    const colI = new Float32Array(wpx);
+    for (let ix = 0; ix < wpx; ix++) colI[ix] = Ireal(sOfY(-P.yW + 2 * P.yW * (ix + 0.5) / wpx));
+    for (let iy = 0; iy < hpx; iy++) {
+      const yv = (iy + 0.5) / hpx - 0.5;
+      const vert = Math.exp(-Math.pow(Math.abs(yv) / 0.42, 4)) * (0.6 + 0.4 * Math.exp(-Math.pow(Math.abs(yv) / 0.22, 2)));
+      for (let ix = 0; ix < wpx; ix++) {
+        const I = colI[ix], v = Math.pow(I, 0.5) * vert, w = Math.pow(I, 8) * vert * 0.3, o4 = (iy * wpx + ix) * 4;
+        d[o4] = clamp(13 + 255 * (col[0] * v * 1.15 + w), 0, 255);
+        d[o4 + 1] = clamp(14 + 255 * (col[1] * v * 1.15 + w), 0, 255);
+        d[o4 + 2] = clamp(17 + 255 * (col[2] * v * 1.15 + w), 0, 255);
+        d[o4 + 3] = 255;
+      }
+    }
+    cg.putImageData(img, 0, 0);
+    o.cache = { key, cv };
+  }
+  g.drawImage(o.cache.cv, x0, y0, x1 - x0, yb - y0);
+  g.strokeStyle = '#2A303C'; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, yb - y0 - 1);
+  drawAxisX(g, x0, x1, y0, yb, false);
+  g.fillStyle = '#6B7280'; g.font = `500 10px ${MONO}`; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText('mm', 4, yb + 7);
+  for (const r of P.rows) {
+    if (!r.valid || !r.inWin || S.sel !== r.k) continue;
+    const x = Math.round(xOfY(r.y, x0, x1)) + 0.5;
+    g.strokeStyle = '#F59E0B'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y0); g.lineTo(x, yb); g.stroke();
+  }
+  if (S.hoverY !== null) {
+    const x = Math.round(xOfY(S.hoverY, x0, x1)) + 0.5;
+    g.strokeStyle = 'rgba(245,158,11,.85)'; g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, y0); g.lineTo(x, yb); g.stroke(); g.setLineDash([]);
+  }
+}
+function bindHover(o) {
+  const move = (e) => {
+    const r = o.cv.getBoundingClientRect(), px = e.clientX - r.left, x0 = PAD.l, x1 = o.w - PAD.r;
+    S.hoverY = px >= x0 && px <= x1 ? -P.yW + (px - x0) / (x1 - x0) * 2 * P.yW : null;
+    dirty.charts = true;
+  };
+  o.cv.addEventListener('pointermove', move);
+  o.cv.addEventListener('pointerleave', () => { S.hoverY = null; dirty.charts = true; });
+}
+bindHover(prof); bindHover(pho);
+
+/* =====================================================================
+   10. BUCLE PRINCIPAL
+   ===================================================================== */
+let last = performance.now(), uiAcc = 0, fpsAcc = 0, fpsN = 0, frameCount = 0, snapCb = null, wallT = 0, simT = 0;
+function updateScene() {
+  const scr = camMode === 'screen';
+  fieldMat.uniforms.uPhase.value = ((wallT / T_WAVE) * 2 * Math.PI) % (2 * Math.PI);
+  fieldMesh.visible = S.waves && !scr;
+  rayGroup.visible = !scr; rayLines.visible = S.rays;
+  profGroup.visible = S.env && !scr;
+  gPlate.visible = gBeam.visible = dimGroup.visible = !scr;
+  lbl.lam.visible = lbl.plate.visible = lbl.L.visible = !scr;
+  lbl.scr.visible = true;
+  if (scr) lbl.sel.visible = false; else lbl.sel.visible = selRay.visible;
+  for (const sp of [lbl.lam]) sp.visible = !scr;
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  const realDt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
+  if (Math.min(window.devicePixelRatio || 1, 2) !== DPR) { resize(); sizeCharts(); dirty.charts = true; }
+  const simDt = S.paused ? 0 : realDt * S.speed;
+  simT += simDt; wallT += simDt;
+  if (dirty.scene) { dirty.scene = false; applyParams(); }
+  updateScene();
+
+  if (camTween) stepCamTween(realDt);
+  else { followFrame(realDt); (activeCam === ortho ? ctlO : ctlP).update(); }
+  scaleLabels();
+
+  if (Q.high) composer.render(); else renderer.render(scene, activeCam);
+  frameCount++; Q.wF++;
+  adaptQuality(now);
+  if (snapCb) { const cb = snapCb; snapCb = null; cb(); }
+
+  uiAcc += realDt; fpsAcc += realDt; fpsN++;
+  if (uiAcc > 0.06) {
+    uiAcc = 0;
+    if (dirty.panels) { dirty.panels = false; updatePanels(); }
+    if (dirty.charts) { dirty.charts = false; drawProfile(); drawPhoto(); }
+    set('t-read', simT.toFixed(2));
+  }
+  if (fpsAcc > 0.5) { $('#fps').textContent = Math.round(fpsN / fpsAcc) + ' FPS'; fpsAcc = 0; fpsN = 0; }
+}
+
+/* =====================================================================
+   11. ARRANQUE
+   ===================================================================== */
+// Calidad adaptable: mide los FPS cada segundo y, si bajan de 40, reduce primero la resolución de render
+// (hasta 0,55×) y después pasa a calidad ligera; no vuelve a subir sola (evita oscilaciones y tirones).
+// Pulsar el botón de calidad reinicia el ajuste.
+function setScale(v) {
+  Q.scale = v; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;   // asentamiento: recompilación y cambio de tamaño
+  renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
+  resize();
+}
+function adaptQuality(now) {
+  if (now - Q.wT < 1000) return;
+  const fps = Q.wF * 1000 / (now - Q.wT); Q.wT = now; Q.wF = 0;
+  if (now - Q.t0 < 2500 || now < Q.settle || document.hidden) return;        // arranque y asentamiento tras un cambio: compilación de shaders y entrada de cámara
+  if (fps >= 40) {
+    Q.slow = 0;
+    // si el rendimiento fue holgado durante 20 s seguidos, se recupera un paso de resolución (máximo 2 veces por sesión)
+    if (fps >= 57 && Q.scale < 1 && Q.retry < 2) { if (++Q.good >= 20) { Q.good = 0; Q.retry++; setScale(Math.min(1, Q.scale + 0.15)); } }
+    else Q.good = 0;
+    return;
+  }
+  Q.good = 0;
+  if (fps >= 12 && ++Q.slow < 2) return;                   // por debajo de 12 FPS basta una medida
+  Q.slow = 0;
+  if (Q.scale > 0.6 && fps >= 12) setScale(Math.max(0.55, Q.scale - 0.15));
+  else if (Q.high) setQuality(false, true);
+  else if (Q.scale > 0.6) setScale(0.55);
+}
+function setQuality(high, auto = false) {
+  Q.high = high; Q.scale = 1; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;
+  renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
+  resize();
+  const b = $('#btn-q');
+  b.dataset.q = high ? 'alta' : 'ligera';
+  b.textContent = high ? 'Calidad alta' : (auto ? 'Calidad ligera (auto)' : 'Calidad ligera');
+}
+function stateHash() {
+  const cam = camMode === 'top-free' ? 'top' : camMode === 'free' ? 'iso' : camMode;
+  return new URLSearchParams({ lam: S.lam, d: S.d, a: S.a, L: S.L, N: S.N, modo: S.mode, vel: S.speed, cam, calidad: Q.high ? 'alta' : 'ligera', w: S.waves ? 1 : 0, r: S.rays ? 1 : 0, e: S.env ? 1 : 0 }).toString();
+}
+// Estado recuperado desde la URL (#lam=…&d=…&a=…&L=…&N=…&modo=…&vel=…&cam=…&calidad=…)
+const START = (() => {
+  const h = new URLSearchParams(location.hash.slice(1)), out = {};
+  for (const k of ['lam', 'd', 'a', 'L', 'N']) { const v = parseFloat(h.get(k)); if (Number.isFinite(v)) S[k] = clamp(v, LIM[k][0], LIM[k][1]); }
+  S.N = Math.round(S.N);
+  if (['double', 'single', 'grating'].includes(h.get('modo'))) S.mode = h.get('modo');
+  if (S.mode !== 'single' && S.a > S.d * A_RATIO) S.a = Math.max(LIM.a[0], S.d * A_RATIO);
+  if (['1', '0.25', '0.1'].includes(h.get('vel'))) out.vel = h.get('vel');
+  if (['top', 'iso', 'screen'].includes(h.get('cam'))) out.cam = h.get('cam');
+  if (['alta', 'ligera'].includes(h.get('calidad'))) out.calidad = h.get('calidad');
+  for (const [k, p] of [['waves', 'w'], ['rays', 'r'], ['env', 'e']]) if (h.get(p) === '0') out[k] = false;
+  return out;
+})();
+$('#btn-q').addEventListener('click', () => setQuality(!Q.high));
+buildSpectrum();
+bindControls();
+bindChrome();
+solve();
+for (const k of ['waves', 'rays', 'env']) if (START[k] === false) toggleLayer(k);
+syncInputs();
+if (START.vel) setSpeed(START.vel);
+dirty.scene = true; applyParams(); dirty.scene = false;
+resize();
+sizeCharts();
+if (START.calidad === 'ligera' || (!START.calidad && (SOFTWARE_GL || LOWEND))) setQuality(false, !START.calidad);
+{
+  const F = frameFor('iso');
+  if (START.cam) { persp.position.copy(F.pos); ctlP.target.copy(F.target); persp.lookAt(F.target); setCamMode('iso'); flyTo(START.cam, 0.6); }
+  else {
+    const off = new V3().subVectors(F.pos, F.target);
+    persp.position.copy(F.target).add(off.multiplyScalar(1.5)).add(new V3(-1.6, 1.0, 1.4));
+    ctlP.target.copy(F.target).add(new V3(0.5, 0.1, 0));
+    persp.lookAt(ctlP.target);
+    setCamMode('iso'); flyTo('iso', 2.4);
+  }
+}
+// Interfaz de diagnóstico para pruebas automáticas
+window.__optica = {
+  S, P, LIM, PRESETS,
+  _three: { renderer, scene, composer },
+  setParam, setMode, setSpeed, togglePause, toggleLayer, flyTo, solve, selectOrder, Ireal, Ienv, lamToRGB,
+  get simT() { return simT; }, get frames() { return frameCount; }, get camMode() { return camMode; },
+  get tweening() { return !!camTween; }, get activeCam() { return activeCam === ortho ? 'ortho' : 'persp'; },
+  get quality() { return Q.high ? 'alta' : 'ligera'; }, glName: GL_NAME,
+  scene3d: () => ({
+    rulerHash: [rulerH, rulerV].map((r) => { const d = r.g.getImageData(0, 0, r.c.width, r.c.height).data; let h = 0; for (let i = 0; i < d.length; i += 7) h = (h * 31 + d[i] + (d[i + 1] << 1)) >>> 0; return h; }),
+    slitGeo: plateDyn.children.filter((c) => c.material === M.slitGlow).map((c) => [c.position.z, c.geometry.parameters.depth]),
+    barGeo: plateDyn.children.filter((c) => c.material === M.plate).map((c) => [c.position.z, c.geometry.parameters.depth, c.position.y, c.geometry.parameters.height]),
+    slits: plateDyn.children.filter((c) => c.material === M.slitGlow).length, plateBoxes: plateDyn.children.filter((c) => c.material === M.plate).length,
+    screenX: gScreen.position.x, field: fieldMesh.visible, rays: rayLines.visible, prof: profGroup.visible, envLine: profE.visible,
+    clip: clipOn, sel: selRay.visible, rb: P.rb, plateVisible: gPlate.visible,
+    rayZ: Array.from(rayLines.geometry.attributes.position.array).filter((_, i) => i % 3 === 2 && i % 6 === 5),
+  }),
+  gpu: () => ({ geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, lost: renderer.getContext().isContextLost(), size: [canvas.width, canvas.height] }),
+  snapshot: () => new Promise((res) => {
+    snapCb = () => {
+      const c = document.createElement('canvas'); c.width = 96; c.height = 54;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(canvas, 0, 0, 96, 54);
+      const d = g.getImageData(0, 0, 96, 54).data;
+      let s1 = 0, s2 = 0; const n = d.length / 4;
+      for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s1 += l; s2 += l * l; }
+      const mean = s1 / n; res({ mean, std: Math.sqrt(Math.max(0, s2 / n - mean * mean)) });
+    };
+  }),
+};
+document.fonts && document.fonts.ready.then(() => { labels.forEach((l) => { l.userData.text = ''; }); dirty.scene = true; dirty.charts = true; dirty.panels = true; });
+
+requestAnimationFrame((t) => { last = t; frame(t); });
+requestAnimationFrame(() => { $('#loader').classList.add('done'); window.__optica_ready = true; });
+
+window.addEventListener('pagehide', (ev) => {
+  if (ev.persisted) return;
+  scene.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+  });
+  envTex.dispose(); composer.dispose(); renderer.dispose();
+});
+</script>
+</body>
+</html>

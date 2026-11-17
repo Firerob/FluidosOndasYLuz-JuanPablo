@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tanque de descarga · Tubo de Venturi · Teorema de Torricelli</title>
+<meta name="description" content="Simulador docente de mecánica de fluidos: descarga de un tanque, tubo de Venturi con piezómetros y alcance del chorro de Torricelli." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230A0C10'/%3E%3Cpath d='M3 12h9l5 4h0l-5 4H3' fill='none' stroke='%230EA5E9' stroke-width='2'/%3E%3Cpath d='M17 16h4c3 0 6 3 8 9' fill='none' stroke='%230EA5E9' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+/* =====================================================================
+   Interfaz de instrumentación: paneles acoplados, superficies mates,
+   separadores de 1 px, poco texto y un único acento funcional.
+   ===================================================================== */
+:root{
+  --app:#0A0C10;
+  --dock:#0C0E12;
+  --bay:#0B0D11;
+  --row:#121620;
+  --hover:#1A1F29;
+  --sep:#222630;
+  --div:#1C212B;
+  --field:#07090C;
+  --field-b:#2A303C;
+  --raise:#141821;
+  --ink:#E5E7EB;
+  --ink-2:#C9D1D9;
+  --lab:#6B7280;
+  --dim:#4B5563;
+  --accent:#F59E0B;
+  --accent-bg:#1E180C;
+  --ok:#10B981;
+  --flow:#0EA5E9;
+  --bad:#EF4444;
+  --bad-bg:#2A1012;
+  --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --math:"IBM Plex Serif","Cambria Math",Cambria,"Times New Roman",serif;
+  --bar:36px;
+  --bay-h:224px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--app);color:var(--ink);font:400 12px/1.45 var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{overflow:hidden}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;border-radius:2px}
+button:disabled{cursor:not-allowed;opacity:.35}
+[hidden]{display:none!important}
+:focus-visible{outline:1px solid var(--accent);outline-offset:1px}
+.v{font-family:var(--math);font-style:italic;font-weight:400;letter-spacing:0}
+sub{font-size:.72em;line-height:0}
+b,dd,td,kbd{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- estructura: banco central + paneles acoplados ---------- */
+#app{display:grid;height:100vh;height:100dvh;grid-template-columns:292px minmax(0,1fr) 316px;grid-template-areas:"left center right";background:var(--app)}
+.side-wrap{display:contents}
+#panel-left{grid-area:left;border-right:1px solid var(--sep)}
+#panel-right{grid-area:right;border-left:1px solid var(--sep)}
+.center{grid-area:center;display:grid;grid-template-rows:var(--bar) minmax(0,1fr) var(--bar) var(--bay-h);min-width:0;min-height:0}
+
+.dock{background:var(--dock);min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+.dock::-webkit-scrollbar,.side-wrap::-webkit-scrollbar{width:8px}
+.dock::-webkit-scrollbar-thumb,.side-wrap::-webkit-scrollbar-thumb{background:#2A303C}
+.dock-title{height:var(--bar);flex:0 0 var(--bar);display:flex;align-items:center;gap:9px;padding:0 14px;border-bottom:1px solid var(--sep);overflow:hidden}
+.dock-title h1{margin:0;font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.sec{padding:11px 14px 13px;border-bottom:1px solid var(--div)}
+.sec-h{margin:0 0 9px;font-size:10px;font-weight:600;line-height:1.2;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sec-head .sec-h{margin:0}
+
+/* ---------- controles de parámetro ---------- */
+.ctrl + .ctrl{margin-top:11px;padding-top:10px;border-top:1px solid var(--div)}
+.ctrl-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ctrl-head label{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.ctrl-head label .v{font-size:13px;color:var(--lab)}
+.num-wrap{display:flex;align-items:stretch;height:28px;flex:0 0 auto;background:var(--field);border:1px solid var(--field-b);border-radius:2px}
+.num-wrap:focus-within{border-color:var(--accent)}
+.num{width:82px;padding:0 8px;background:transparent;border:0;outline:none;color:var(--ink);font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right;-moz-appearance:textfield;appearance:textfield}
+.num:focus-visible{outline:none}
+.num::-webkit-inner-spin-button,.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num-wrap .unit{display:flex;align-items:center;justify-content:center;min-width:36px;padding:0 6px;border-left:1px solid var(--field-b);background:#0B0E13;font:500 10.5px var(--mono);color:var(--lab)}
+
+input[type=range].range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:22px;margin:3px 0 0;background:transparent;cursor:pointer;--p:50%}
+.range:focus-visible{outline:none}
+.range::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,#8B949E 0 var(--p),#2A303C var(--p) 100%)}
+.range::-moz-range-track{height:2px;background:#2A303C}
+.range::-moz-range-progress{height:2px;background:#8B949E}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:8px;height:16px;margin-top:-7px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range::-moz-range-thumb{width:8px;height:16px;border-radius:2px;border:1px solid #07090C;background:linear-gradient(180deg,#D1D5DB 0 44%,#6E7681 44% 56%,#D1D5DB 56%)}
+.range:hover::-webkit-slider-thumb,.range:focus-visible::-webkit-slider-thumb,.range:active::-webkit-slider-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
+.range:hover::-moz-range-thumb,.range:focus-visible::-moz-range-thumb,.range:active::-moz-range-thumb{background:linear-gradient(180deg,#F59E0B 0 44%,#7A4E06 44% 56%,#F59E0B 56%)}
+.range.locked::-webkit-slider-runnable-track{background:linear-gradient(90deg,#8B949E 0 var(--p),#2A303C var(--p) 100%)}
+
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px}
+.kv > span:first-child{font-size:10.5px;color:var(--lab)}
+.kv .val{font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.kv .val b{font-size:14px;font-weight:500;color:var(--ink)}
+.lock{display:inline-flex;align-items:center;gap:4px;font:500 10px var(--mono);color:var(--lab)}
+.lock.on{color:var(--accent)}
+
+/* interruptor de dos posiciones (segmentado a todo el ancho) */
+.seg.full{display:flex;width:100%;margin-top:9px}
+.seg.full > button{flex:1;justify-content:center}
+
+/* selector compacto de fluido */
+.pick{position:relative}
+.pick-btn{width:100%;height:28px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 9px;background:var(--raise);border:1px solid var(--field-b);font-size:11.5px;color:var(--ink-2);text-align:left}
+.pick-btn:hover{border-color:#3A4150;color:var(--ink)}
+.pick-btn[aria-expanded=true]{border-color:var(--accent)}
+.pick-btn .sw{flex:0 0 auto;width:8px;height:8px;border-radius:1px;background:var(--fc,#3B82F6)}
+.pick-btn #fl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-btn svg{flex:0 0 auto;color:var(--lab)}
+.mats{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:20;display:flex;flex-direction:column;background:var(--dock);border:1px solid var(--field-b);border-radius:2px}
+.mat{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;text-align:left;border-radius:0;border-bottom:1px solid var(--div)}
+.mat:last-child{border-bottom:0}
+.mat:hover{background:var(--hover)}
+.mat .nm{display:flex;align-items:center;gap:7px}
+.mat .nm i{width:7px;height:7px;border-radius:1px;background:var(--fc)}
+.mat b{font-weight:500;font-size:11.5px;color:var(--ink)}
+.mat span.r{font:400 11px var(--mono);color:var(--lab)}
+.mat[aria-pressed=true]{background:var(--accent-bg);box-shadow:inset 2px 0 0 var(--accent)}
+.mat[aria-pressed=true] b{color:var(--accent)}
+
+/* ---------- diagnóstico de cavitación ---------- */
+.diag{--st:var(--ok)}
+.diag[data-state=near]{--st:var(--accent)}
+.diag[data-state=cav]{--st:var(--bad);background:linear-gradient(180deg,var(--bad-bg),transparent 70%)}
+.state{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--st);white-space:nowrap}
+.state::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.diag[data-state=cav] .state::before{animation:blink .7s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+.big{display:flex;align-items:baseline;gap:8px;padding:8px 0 8px}
+.big b{font:600 30px/1 var(--mono);color:var(--st)}
+.big span{font:400 11px var(--mono);color:var(--lab)}
+.big .cap{margin-left:auto;font:400 10.5px var(--sans);color:var(--lab);text-align:right;line-height:1.3}
+.meter-row{display:flex;align-items:center;gap:10px}
+.meter{position:relative;flex:1;height:4px;background:#1A1F29}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--st)}
+.meter u{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--bad)}
+.meter-val{min-width:84px;text-align:right;font:400 10.5px var(--mono);color:var(--lab);white-space:nowrap}
+.meter-val b{font-size:13px;font-weight:500;color:var(--ink)}
+.diag-msg{margin:9px 0 0;font-size:10.5px;color:var(--lab);line-height:1.35;min-height:14px}
+.diag[data-state=cav] .diag-msg{color:#FCA5A5}
+.btn-primary{width:100%;height:32px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 10px;background:var(--raise);border:1px solid var(--field-b);border-radius:2px;font-size:12px;font-weight:600;color:var(--ink)}
+.btn-primary .ba{display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-primary .sub{font:500 12px var(--mono);color:var(--ink-2)}
+
+/* ---------- panel derecho con pestañas ---------- */
+.tabs{display:flex;height:var(--bar);flex:0 0 var(--bar);border-bottom:1px solid var(--sep)}
+.tabs [role=tab]{flex:1;height:100%;padding:0 6px;border-radius:0;font-size:11px;font-weight:500;color:var(--lab);border-right:1px solid var(--div);white-space:nowrap}
+.tabs [role=tab]:last-child{border-right:0}
+.tabs [role=tab]:hover{color:var(--ink-2);background:var(--hover)}
+.tabs [role=tab][aria-selected=true]{color:var(--accent);background:var(--accent-bg);box-shadow:inset 0 -2px 0 var(--accent)}
+.pane{padding:12px 14px 14px}
+
+.sheet{margin:0;border:1px solid var(--div)}
+.sheet > div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 9px;border-bottom:1px solid var(--div)}
+.sheet > div:last-child{border-bottom:0}
+.sheet > div:nth-child(even){background:var(--row)}
+.sheet dt{font-size:10.5px;color:var(--lab);white-space:nowrap}
+.sheet dt .v{font-size:12px}
+.sheet dd{margin:0;font:500 13px var(--mono);color:var(--ink);text-align:right;white-space:nowrap}
+.sheet dd small{margin-left:5px;font-size:10.5px;font-weight:400;color:var(--lab)}
+.sheet dd .alt{display:block;margin-top:1px;font-size:10.5px;font-weight:400;color:var(--lab)}
+.sheet .hl dd{color:var(--flow)}
+.sheet .neg{color:#FCA5A5}
+.sheet-gap{height:10px}
+.chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;margin-left:6px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10px var(--sans);letter-spacing:.04em;color:var(--ink-2);vertical-align:1px}
+.chip[data-r=lam]{color:var(--ok);border-color:#164E3B}
+.chip[data-r=tra]{color:var(--accent);border-color:#5A3D0A}
+.chip[data-r=tur]{color:var(--flow);border-color:#0C4A6E}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--div)}
+.tbl{width:100%;border-collapse:collapse;font:400 12.5px var(--mono)}
+.tbl th{padding:6px;text-align:right;font:500 10px var(--sans);color:var(--lab);background:#0B0E13;border-bottom:1px solid var(--sep);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{width:28px;text-align:center}
+.tbl td{padding:7px 6px;text-align:right;color:var(--ink-2);border-bottom:1px solid var(--div);white-space:nowrap}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl tbody tr:nth-child(even) td{background:var(--row)}
+.tbl td.hp{color:var(--ink);font-weight:500}
+.tbl tr.neg td.hp,.tbl tr.neg td.pp{color:#FCA5A5}
+.tbl .tag{display:inline-block;width:16px;height:16px;line-height:16px;border:1px solid var(--field-b);background:var(--field);font:500 10.5px var(--mono);color:var(--ink-2);text-align:center}
+.note{margin:10px 0 0;font-size:10.5px;color:var(--lab);line-height:1.4}
+.note b{font:500 11.5px var(--mono);color:var(--ink-2)}
+
+/* ---------- barras de herramientas ---------- */
+.toolbar{display:flex;align-items:center;gap:8px;min-width:0;padding:0 10px;background:var(--dock);white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.tb-top{border-bottom:1px solid var(--sep)}
+.time-dock{border-top:1px solid var(--sep);border-bottom:1px solid var(--sep)}
+.tb-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 4px;background:var(--sep)}
+.tb-fill{flex:1 1 auto}
+.seg{display:inline-flex;flex:0 0 auto;background:var(--raise);border:1px solid var(--field-b);border-radius:2px}
+.seg > button{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:0;border-left:1px solid var(--field-b);font-size:11px;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg > button:first-child{border-left:0}
+.seg > button:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.seg > button[aria-pressed=true]{background:var(--accent-bg);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg > .tog[aria-pressed=true]{background:var(--raise);color:var(--ink-2);box-shadow:none}
+.seg > .tog[aria-pressed=true]:hover{background:var(--hover)}
+.seg.sm > button{height:20px;padding:0 8px;font-size:10.5px}
+.cam-btn svg{flex:0 0 auto;opacity:.8}
+.led{flex:0 0 auto;width:7px;height:7px;border-radius:1px;background:#1A1F29;border:1px solid #3A4150}
+.tog[aria-pressed=true] .led{background:var(--accent);border-color:var(--accent)}
+.lbl-s{display:none}
+.qbtn{flex:0 0 auto;height:24px;padding:0 9px;background:var(--raise);border:1px solid var(--field-b);font-size:11px;color:var(--ink-2)}
+.qbtn:hover{color:var(--ink)}
+.qbtn[data-q=ligera]{color:var(--accent);border-color:#5A3D0A}
+.fps{min-width:54px;text-align:right;font:500 10.5px var(--mono);color:var(--lab)}
+.tread{font:400 10.5px var(--mono);color:var(--lab)}
+.tread b{font-size:13px;font-weight:500;color:var(--ink)}
+.tread.frozen b{color:var(--accent)}
+
+/* ---------- visor 3D ---------- */
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:#090C11}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+.ov{position:absolute;z-index:2}
+.hud-tl{top:10px;left:10px;max-width:calc(100% - 20px);pointer-events:none}
+.status{--st:var(--ok);display:flex;flex-direction:column;gap:5px;padding:6px 10px;background:rgba(12,14,18,.92);border:1px solid var(--sep);border-left:2px solid var(--st);border-radius:2px}
+.status[data-state=drain]{--st:var(--flow)}
+.status[data-state=empty]{--st:var(--lab)}
+.status[data-state=cav]{--st:var(--bad)}
+.st-row{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--st)}
+.status .sn{font:500 11.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--st)}
+.eq-live{font:400 11px var(--mono);color:var(--lab);white-space:nowrap}
+.eq-live i{font-family:var(--math);font-style:italic;font-size:12px;color:var(--ink-2)}
+.eq-live b{font-weight:500;color:var(--ink)}
+.vbar{display:flex;align-items:center;gap:6px;font:400 10px var(--mono);color:var(--lab)}
+.vbar i{display:block;width:96px;height:4px;background:linear-gradient(90deg,#1D4ED8,#22D3EE 50%,#F59E0B)}
+.help-fab{position:absolute;right:10px;bottom:10px;z-index:2;height:24px;padding:0 9px;background:rgba(12,14,18,.92);border:1px solid var(--field-b);font:500 11px var(--sans);color:var(--ink-2)}
+.help-fab:hover{border-color:var(--accent);color:var(--accent)}
+.hint2d{position:absolute;left:10px;bottom:10px;z-index:2;padding:3px 7px;background:rgba(12,14,18,.85);border:1px solid var(--sep);font:400 10.5px var(--sans);color:var(--lab);pointer-events:none;opacity:0;transition:opacity .3s}
+.hint2d.show{opacity:1}
+.loader{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#090C11;transition:opacity .4s ease .1s}
+.loader.done{opacity:0;pointer-events:none}
+.ld{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:380px;padding:0 20px;text-align:center;font-size:12px;color:#8B949E}
+.ld svg path{stroke-dasharray:60;animation:dash 1.6s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-120}}
+.loader.err .ld{color:#FCA5A5}
+
+/* ---------- bahía inferior ---------- */
+.bay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);min-width:0;min-height:0;background:var(--bay)}
+.bay-pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.bay-pane + .bay-pane{border-left:1px solid var(--sep)}
+.pane-h{display:flex;align-items:center;justify-content:space-between;gap:10px;height:28px;flex:0 0 28px;padding:0 10px;border-bottom:1px solid var(--div);overflow:hidden}
+.pane-h h3{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab);white-space:nowrap}
+.pane-h h3 .sub{margin-left:6px;font:400 10.5px var(--mono);letter-spacing:0;text-transform:none;color:var(--lab)}
+.legend{display:flex;gap:10px;overflow:hidden;font-size:10px;color:var(--lab);white-space:nowrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:2px;background:var(--c)}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 3px,transparent 3px 5px)}
+.legend i.dot{width:6px;height:6px;border-radius:50%}
+.pane-h .r{display:flex;align-items:center;gap:10px;min-width:0}
+.plot{position:relative;flex:1 1 auto;min-height:0}
+.plot canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+#dis-cv{cursor:crosshair;touch-action:none}
+
+/* ---------- ayuda teórica (modal) ---------- */
+.help{width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;background:var(--dock);color:var(--ink);border:1px solid var(--field-b);border-radius:2px}
+.help::backdrop{background:rgba(5,7,10,.66)}
+.help-h{display:flex;align-items:center;justify-content:space-between;height:var(--bar);padding:0 14px;border-bottom:1px solid var(--sep)}
+.help-h h2{margin:0;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lab)}
+.help-x{width:26px;height:26px;display:grid;place-items:center;color:var(--lab);border:1px solid transparent}
+.help-x:hover{color:var(--ink);border-color:var(--field-b)}
+.help-b{padding:4px 14px 14px;overflow-y:auto}
+.eqs{display:grid;grid-template-columns:auto 1fr;margin:0;padding:0}
+.eqs dt,.eqs dd{margin:0;padding:9px 0;border-bottom:1px solid var(--div)}
+.eqs dt{padding-right:18px;font-family:var(--math);font-style:italic;font-size:15px;color:var(--ink);white-space:nowrap;display:flex;align-items:center;gap:3px}
+.eqs dd{font-size:11px;color:var(--lab);display:flex;align-items:center}
+.eqs .grp{grid-column:1/-1;padding:12px 0 4px;font:600 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-style:normal;border-bottom:1px solid var(--sep)}
+.eqs .up{font-style:normal;font-family:var(--sans);font-size:13px}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:.8em;line-height:1.05}
+.frac>span:first-child{padding:0 3px 1px;border-bottom:1px solid currentColor}
+.frac>span:last-child{padding:1px 3px 0}
+.sqrt{display:inline-flex;align-items:center}
+.sqrt::before{content:"√";margin-right:-1px;font-style:normal;font-family:var(--sans);font-size:1.15em}
+.sqrt>span{padding:1px 2px 0;border-top:1px solid currentColor}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:10.5px;color:var(--lab)}
+kbd{margin-right:3px;padding:0 4px;border:1px solid var(--field-b);border-radius:2px;background:var(--field);font:500 10px var(--mono);color:var(--ink-2)}
+
+/* ---------- adaptación a la pantalla ---------- */
+@media (max-width:1499px){
+  #app{grid-template-columns:minmax(0,1fr) 330px;grid-template-areas:"center side"}
+  .side-wrap{display:flex;flex-direction:column;grid-area:side;min-height:0;overflow-y:auto;background:var(--dock);border-left:1px solid var(--sep);scrollbar-width:thin;scrollbar-color:#2A303C transparent}
+  .side-wrap > .dock{flex:0 0 auto;overflow:visible;border:0}
+  #panel-right{border-top:1px solid var(--sep)}
+}
+@media (max-width:1240px){ .tb-label{display:none} }
+@media (max-width:1060px){ .legend{display:none} }
+@media (max-width:900px){
+  body{overflow:auto}
+  #app{height:auto;min-height:100vh;grid-template-columns:minmax(0,1fr);grid-template-areas:"center" "side"}
+  .center{grid-template-rows:auto max(56vh,340px) auto auto}
+  .toolbar{flex-wrap:wrap;row-gap:6px;padding:6px 10px;white-space:normal}
+  .tb-fill,.tb-sep{display:none}
+  .bay{grid-template-columns:minmax(0,1fr)}
+  .bay-pane{height:220px}
+  .bay-pane + .bay-pane{border-left:0;border-top:1px solid var(--sep)}
+  .side-wrap{overflow:visible;border-left:0;border-top:1px solid var(--sep)}
+  .legend{display:flex}
+}
+@media (max-width:560px){
+  .cam-btn .lbl{display:none}
+  .lbl-l{display:none}
+  .lbl-s{display:inline}
+  .legend,.eq-live,.vbar{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+<div id="app">
+
+  <!-- ===================== BANCO CENTRAL ===================== -->
+  <div class="center">
+    <div class="toolbar tb-top" role="toolbar" aria-label="Vista y capas">
+      <span class="tb-label">Vista</span>
+      <div class="seg" role="group" aria-label="Vistas de cámara">
+        <button class="cam-btn" data-cam="front" aria-pressed="false" title="Vista frontal 2D ortográfica: arrastra para desplazar y usa la rueda para acercar (tecla 1)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="3" width="13" height="10" rx="1"/><path d="M3.5 9h3l2-1.5h0l2 1.5h2"/></svg>
+          <span class="lbl">Frontal 2D</span></button>
+        <button class="cam-btn" data-cam="iso" aria-pressed="true" title="Vista isométrica 3D (tecla 2)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M2 5l6 3.5L14 5M8 8.5v6"/></svg>
+          <span class="lbl">Isométrica 3D</span></button>
+        <button class="cam-btn" data-cam="throat" aria-pressed="false" title="Acercar a la garganta del Venturi (tecla 3)">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 5h4l2.5 2h1L11 5h4M1 11h4l2.5-2h1L11 11h4"/><circle cx="8" cy="8" r="0.8" fill="currentColor"/></svg>
+          <span class="lbl">Garganta Venturi</span></button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tb-label">Capas</span>
+      <div class="seg" role="group" aria-label="Capas visibles">
+        <button class="tog" data-tog="vectors" aria-pressed="true" title="Vectores de velocidad en cada sección y en el chorro (V)"><span class="led"></span>Vectores</button>
+        <button class="tog" data-tog="streams" aria-pressed="false" title="Líneas de corriente en el plano medio (S)"><span class="led"></span><span class="lbl-l">Líneas de corriente</span><span class="lbl-s">Corriente</span></button>
+        <button class="tog" data-tog="energy" aria-pressed="true" title="Línea de energía (LE) y línea piezométrica (LP) (E)"><span class="led"></span><span class="lbl-l">Líneas de energía</span><span class="lbl-s">Energía</span></button>
+      </div>
+      <span class="tb-fill"></span>
+      <button class="qbtn" id="btn-q" data-q="alta" title="Calidad gráfica: alta usa brillo, sombras y suavizado; ligera prioriza la fluidez en equipos modestos">Calidad alta</button>
+      <span class="fps" id="fps"></span>
+    </div>
+
+    <main id="stage" aria-label="Montaje experimental en 3D">
+      <canvas id="gl" aria-label="Vista 3D del tanque, el tubo de Venturi y el chorro" tabindex="0"></canvas>
+      <div class="ov hud-tl">
+        <div class="status" id="status" data-state="ok">
+          <div class="st-row" role="status" aria-live="polite"><span class="dot"></span><span id="status-txt">Flujo estacionario</span><span class="sn" id="status-q">Q = —</span></div>
+          <div class="eq-live" id="eq-live"></div>
+          <div class="vbar" aria-hidden="true"><span class="v">v</span> 0<i></i><span id="vbar-max">—</span> m/s</div>
+        </div>
+      </div>
+      <div class="hint2d" id="hint-2d">Vista 2D · arrastra para desplazar · rueda para acercar</div>
+      <button class="help-fab" id="btn-help" type="button" aria-haspopup="dialog" title="Ecuaciones del modelo y atajos de teclado">? Teórico</button>
+      <div class="loader" id="loader">
+        <div class="ld">
+          <svg width="120" height="40" viewBox="0 0 120 40" fill="none"><path d="M4 14h40l14 6 14-6h44" stroke="#0EA5E9" stroke-width="1.5" stroke-linecap="round"/><path d="M4 26h40l14-6 14 6h44" stroke="#4B5563" stroke-width="1" stroke-linecap="round"/></svg>
+          <span class="ld-txt">Preparando el banco hidráulico…</span>
+        </div>
+      </div>
+    </main>
+
+    <div class="toolbar time-dock" role="toolbar" aria-label="Control de tiempo">
+      <span class="tb-label">Tiempo</span>
+      <div class="seg" role="group" aria-label="Velocidad de simulación" id="speed-seg">
+        <button data-speed="1" aria-pressed="true" title="Tiempo real">1.0×</button>
+        <button data-speed="0.25" aria-pressed="false" title="Cámara lenta ×4">0.25×</button>
+        <button data-speed="0.1" aria-pressed="false" title="Cámara lenta ×10">0.1×</button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <div class="seg" role="group" aria-label="Reproducción">
+        <button class="btn play" id="btn-pause" aria-pressed="false" title="Pausar o reanudar (barra espaciadora)">
+          <svg id="ico-pause" width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="1.5" width="3" height="9" rx=".5"/><rect x="7" y="1.5" width="3" height="9" rx=".5"/></svg>
+          <span id="pause-txt">Pausar</span></button>
+      </div>
+      <span class="tb-fill"></span>
+      <span class="tread" id="tread-h"><span class="v">h</span> = <b id="h-read">—</b> m</span>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tread" id="tread"><span class="v">t</span> = <b id="t-read">0.00</b> s</span>
+    </div>
+
+    <div class="bay bottom-bar">
+      <section class="bay-pane" aria-labelledby="h-prof">
+        <header class="pane-h">
+          <h3 id="h-prof">Perfil del Venturi<span class="sub">v(x) · P(x)</span></h3>
+          <div class="legend">
+            <span><i style="--c:#0EA5E9"></i>velocidad</span>
+            <span><i style="--c:#A78BFA"></i>presión manométrica</span>
+            <span><i class="dash" style="--c:#EF4444"></i><span class="v">P</span><sub>v</sub></span>
+          </div>
+        </header>
+        <div class="plot"><canvas id="prof-cv" aria-label="Velocidad y presión a lo largo del eje del tubo"></canvas></div>
+      </section>
+      <section class="bay-pane" aria-labelledby="h-dis">
+        <header class="pane-h">
+          <h3 id="h-dis">Curva de descarga</h3>
+          <div class="r">
+            <div class="legend" id="dis-legend">
+              <span><i style="--c:#0EA5E9"></i>modelo</span>
+              <span id="lg-ideal"><i class="dash" style="--c:#6E7681"></i>ideal</span>
+              <span><i class="dot" style="--c:#10B981"></i>vaciado</span>
+            </div>
+            <div class="seg sm" role="group" aria-label="Magnitud de la curva">
+              <button data-dis="Q" aria-pressed="true">Q(h)</button>
+              <button data-dis="x" aria-pressed="false">x(h)</button>
+            </div>
+          </div>
+        </header>
+        <div class="plot"><canvas id="dis-cv" title="Haz clic o arrastra para fijar el nivel h" aria-label="Caudal o alcance en función del nivel del tanque"></canvas></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="side-wrap">
+  <!-- ===================== PANEL IZQUIERDO: PARÁMETROS ===================== -->
+  <aside id="panel-left" class="dock" aria-label="Parámetros del sistema">
+    <header class="dock-title">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5h4l2.5 2h1L11 5h4M1 11h4l2.5-2h1L11 11h4" fill="none" stroke="#0EA5E9" stroke-width="1.3"/></svg>
+      <h1>Tanque · Venturi · Torricelli</h1>
+    </header>
+
+    <section class="sec" aria-labelledby="h-tank">
+      <h2 class="sec-h" id="h-tank">Tanque</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-h">Nivel de fluido <span class="v">h</span></label>
+          <div class="num-wrap"><input class="num" id="num-h" type="number" min="0.2" max="2.5" step="0.01" inputmode="decimal" aria-label="Nivel sobre el eje de la tubería en metros" /><span class="unit">m</span></div>
+        </div>
+        <input class="range" id="rng-h" type="range" min="0.2" max="2.5" step="0.005" aria-label="Nivel de fluido" />
+        <div class="seg full" role="group" aria-label="Régimen del tanque" id="mode-seg">
+          <button data-mode="const" aria-pressed="true" title="Válvula de llenado abierta: el caudal de entrada iguala al de salida (C)">Nivel constante</button>
+          <button data-mode="drain" aria-pressed="false" title="Válvula cerrada: el tanque se vacía en tiempo real (C)">Vaciado libre</button>
+        </div>
+        <div class="kv"><span>Presión en el fondo <span class="v">ρ g H</span></span><span class="val"><b id="o-pb">—</b> kPa</span></div>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-pipe">
+      <h2 class="sec-h" id="h-pipe">Tubería</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-D1">Diámetro principal <span class="v">D</span><sub>1</sub></label>
+          <div class="num-wrap"><input class="num" id="num-D1" type="number" min="4" max="12" step="0.1" inputmode="decimal" aria-label="Diámetro principal en centímetros" /><span class="unit">cm</span></div>
+        </div>
+        <input class="range" id="rng-D1" type="range" min="4" max="12" step="0.05" aria-label="Diámetro principal" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="num-D2">Garganta <span class="v">D</span><sub>2</sub></label>
+          <div class="num-wrap"><input class="num" id="num-D2" type="number" min="1.5" max="12" step="0.1" inputmode="decimal" aria-label="Diámetro de la garganta en centímetros" /><span class="unit">cm</span></div>
+        </div>
+        <input class="range" id="rng-D2" type="range" min="1.5" max="12" step="0.05" aria-label="Diámetro de la garganta" />
+        <div class="kv"><span>Relación <span class="v">β</span> = <span class="v">D</span><sub>2</sub>/<span class="v">D</span><sub>1</sub></span><span class="val"><span class="lock" id="d2-lock" title="La garganta no puede ser mayor que la tubería principal">D₂ ≤ D₁</span>&nbsp; <b id="o-beta">—</b></span></div>
+        <div class="kv"><span>Boquilla de salida <span class="v">D</span><sub>b</sub> (fija)</span><span class="val"><b id="o-dn">2.50</b> cm</span></div>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="h-fluid">
+      <h2 class="sec-h" id="h-fluid">Fluido</h2>
+      <div class="pick">
+        <button class="pick-btn" id="fl-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="fl-list">
+          <span class="sw" id="fl-sw"></span><span id="fl-name">Agua dulce</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3.5 5 6.5 8 3.5"/></svg>
+        </button>
+        <div class="mats" id="fl-list" role="group" aria-label="Fluidos" hidden></div>
+      </div>
+      <div class="kv"><span>Densidad <span class="v">ρ</span></span><span class="val"><b id="o-rho">—</b> kg/m³</span></div>
+      <div class="kv"><span>Viscosidad <span class="v">μ</span> (20 °C)</span><span class="val"><b id="o-mu">—</b> Pa·s</span></div>
+      <div class="seg full" role="group" aria-label="Modelo de flujo" id="loss-seg">
+        <button data-loss="0" aria-pressed="true" title="Flujo ideal: sin pérdidas, Cv = 1 (L)">Ideal</button>
+        <button data-loss="1" aria-pressed="false" title="Pérdidas por fricción (Darcy–Weisbach) y singulares (L)">Con pérdidas</button>
+      </div>
+    </section>
+
+    <section class="sec diag" id="diag" data-state="ok" aria-labelledby="h-diag">
+      <div class="sec-head">
+        <h2 class="sec-h" id="h-diag">Diagnóstico</h2>
+        <span class="state" id="d-state">Sin cavitación</span>
+      </div>
+      <div class="big"><b id="d-pabs">—</b><span>kPa</span><span class="cap">presión absoluta<br/>mínima (garganta)</span></div>
+      <div class="meter-row">
+        <div class="meter" title="Presión absoluta mínima respecto de la atmosférica; la marca roja es la presión de vapor"><i id="d-meter"></i><u id="d-pv"></u></div>
+        <span class="meter-val"><span class="v">P</span><sub>v</sub> <b id="d-pvv">—</b> kPa</span>
+      </div>
+      <p class="diag-msg" id="d-msg"></p>
+      <button class="btn-primary" id="btn-fill" title="Devuelve el tanque al nivel fijado y reinicia el registro de vaciado">
+        <span class="ba"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 2v9M6 7l4 4 4-4M3 14v3h14v-3"/></svg>Rellenar tanque</span>
+        <span class="sub" id="btn-fill-sub">—</span>
+      </button>
+    </section>
+  </aside>
+
+  <!-- ===================== PANEL DERECHO: PESTAÑAS ===================== -->
+  <aside id="panel-right" class="dock" aria-label="Datos del experimento">
+    <div class="tabs" role="tablist" aria-label="Datos del experimento">
+      <button role="tab" id="tab-res" aria-selected="true" aria-controls="pane-res" tabindex="0">Resultados</button>
+      <button role="tab" id="tab-pz" aria-selected="false" aria-controls="pane-pz" tabindex="-1">Piezómetros</button>
+      <button role="tab" id="tab-tel" aria-selected="false" aria-controls="pane-tel" tabindex="-1">Telemetría</button>
+    </div>
+
+    <section class="pane" role="tabpanel" id="pane-res" aria-labelledby="tab-res">
+      <dl class="sheet">
+        <div class="hl"><dt>Caudal <span class="v">Q</span></dt><dd><span id="r-QL">—</span><small>L/s</small><span class="alt"><span id="r-Qm">—</span> m³/s</span></dd></div>
+        <div><dt>Velocidad <span class="v">v</span><sub>1</sub></dt><dd><span id="r-v1">—</span><small>m/s</small></dd></div>
+        <div><dt>Velocidad <span class="v">v</span><sub>2</sub> (garganta)</dt><dd><span id="r-v2">—</span><small>m/s</small></dd></div>
+        <div><dt>Velocidad de salida <span class="v">v</span><sub>s</sub></dt><dd><span id="r-vs">—</span><small>m/s</small></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div><dt>Presión <span class="v">P</span><sub>1</sub> (manom.)</dt><dd><span id="r-P1">—</span><small>kPa</small></dd></div>
+        <div><dt>Presión <span class="v">P</span><sub>2</sub> (manom.)</dt><dd><span id="r-P2">—</span><small>kPa</small></dd></div>
+        <div class="hl"><dt>Caída Δ<span class="v">P</span> = <span class="v">P</span><sub>1</sub> − <span class="v">P</span><sub>2</sub></dt><dd><span id="r-dP">—</span><small>kPa</small></dd></div>
+      </dl>
+      <div class="sheet-gap"></div>
+      <dl class="sheet">
+        <div><dt>Reynolds <span class="v">Re</span><sub>1</sub></dt><dd><span id="r-Re">—</span><span class="chip" id="r-reg" data-r="tur">—</span></dd></div>
+        <div><dt>Coef. de velocidad <span class="v">C</span><sub>v</sub></dt><dd><span id="r-Cv">—</span></dd></div>
+        <div class="hl"><dt>Alcance del chorro <span class="v">x</span></dt><dd><span id="r-x">—</span><small>m</small></dd></div>
+      </dl>
+    </section>
+
+    <section class="pane" role="tabpanel" id="pane-pz" aria-labelledby="tab-pz" hidden>
+      <h2 class="sr-only">Piezómetros</h2>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr>
+          <th scope="col">#</th>
+          <th scope="col"><span class="v">D</span> (cm)</th>
+          <th scope="col"><span class="v">v</span> (m/s)</th>
+          <th scope="col"><span class="v">h</span><sub>p</sub> (m)</th>
+          <th scope="col"><span class="v">P</span> (kPa)</th>
+        </tr></thead>
+        <tbody id="pz-body"></tbody>
+      </table></div>
+      <p class="note">Δ<span class="v">h</span><sub>12</sub> = <b id="pz-dh">—</b> m &nbsp;→&nbsp; <span class="v">ρ g</span> Δ<span class="v">h</span> = <b id="pz-dP">—</b> kPa</p>
+      <p class="note">Caudal deducido del Venturi <b id="pz-Qv">—</b> L/s</p>
+      <p class="note" id="pz-rec">Recuperación de presión 3 vs 1: <b id="pz-rc">—</b></p>
+    </section>
+
+    <section class="pane" role="tabpanel" id="pane-tel" aria-labelledby="tab-tel" hidden>
+      <h2 class="sr-only">Telemetría</h2>
+      <dl class="sheet">
+        <div><dt>Volumen en el tanque</dt><dd><span id="t-vol">—</span><small>L</small></dd></div>
+        <div><dt>Variación de nivel d<span class="v">h</span>/d<span class="v">t</span></dt><dd><span id="t-dhdt">—</span><small>mm/s</small></dd></div>
+        <div><dt>Tiempo hasta nivel mínimo</dt><dd><span id="t-tdrain">—</span><small>s</small></dd></div>
+        <div><dt>Reynolds en garganta <span class="v">Re</span><sub>2</sub></dt><dd><span id="t-Re2">—</span></dd></div>
+        <div><dt>Factor de fricción <span class="v">f</span><sub>1</sub></dt><dd><span id="t-f">—</span></dd></div>
+        <div><dt>Pérdida de carga <span class="v">h</span><sub>L</sub></dt><dd><span id="t-hL">—</span><small>m</small></dd></div>
+        <div><dt>Altura de la boquilla <span class="v">H</span></dt><dd><span id="t-Hn">—</span><small>m</small></dd></div>
+        <div><dt>Tiempo de vuelo</dt><dd><span id="t-tof">—</span><small>s</small></dd></div>
+        <div><dt>Velocidad de impacto</dt><dd><span id="t-vi">—</span><small>m/s</small></dd></div>
+        <div><dt>Ángulo de impacto</dt><dd><span id="t-ang">—</span><small>°</small></dd></div>
+      </dl>
+    </section>
+  </aside>
+  </div>
+</div>
+
+<!-- ===================== AYUDA TEÓRICA ===================== -->
+<dialog class="help" id="help-dlg" aria-labelledby="h-model">
+  <div class="help-h">
+    <h2 id="h-model">Ayuda teórica</h2>
+    <button class="help-x" id="help-close" type="button" aria-label="Cerrar ayuda"><svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.4"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button>
+  </div>
+  <div class="help-b">
+    <dl class="eqs">
+      <dt class="grp">Continuidad</dt>
+      <dt>Q = A<sub>1</sub>v<sub>1</sub> = A<sub>2</sub>v<sub>2</sub></dt><dd>Fluido incompresible: el caudal es el mismo en toda la tubería; A = πD²/4</dd>
+      <dt class="grp">Bernoulli</dt>
+      <dt>P<sub>1</sub> + <span class="frac"><span>1</span><span>2</span></span>ρv<sub>1</sub>² + ρgy<sub>1</sub> = P<sub>2</sub> + <span class="frac"><span>1</span><span>2</span></span>ρv<sub>2</sub>² + ρgy<sub>2</sub></dt><dd>Energía por unidad de volumen a lo largo de una línea de corriente (flujo ideal)</dd>
+      <dt>Δ P = <span class="frac"><span>1</span><span>2</span></span>ρ (v<sub>2</sub>² − v<sub>1</sub>²)</dt><dd>Efecto Venturi: la presión cae donde la sección se estrecha</dd>
+      <dt>h<sub>p</sub> = <span class="frac"><span>P</span><span>ρ g</span></span></dt><dd>Altura que alcanza el fluido en un piezómetro (presión manométrica)</dd>
+      <dt class="grp">Torricelli</dt>
+      <dt>v<sub>s</sub> = C<sub>v</sub><span class="sqrt"><span>2 g h</span></span></dt><dd>Velocidad de salida; h es la altura del fluido sobre el eje de la boquilla</dd>
+      <dt>x = v<sub>s</sub><span class="sqrt"><span><span class="frac"><span>2H</span><span>g</span></span></span></span></dt><dd>Alcance del chorro en caída libre desde la altura H de la boquilla</dd>
+      <dt>A<sub>T</sub><span class="frac"><span>dh</span><span>dt</span></span> = −Q</dt><dd>Vaciado libre del tanque de sección A<sub>T</sub></dd>
+      <dt class="grp">Pérdidas (modelo real)</dt>
+      <dt>Re = <span class="frac"><span>ρ v D</span><span>μ</span></span></dt><dd>Laminar si Re &lt; 2300, turbulento si Re &gt; 4000</dd>
+      <dt>h<sub>L</sub> = Σ f <span class="frac"><span>L</span><span>D</span></span><span class="frac"><span>v²</span><span>2g</span></span> + Σ K <span class="frac"><span>v²</span><span>2g</span></span></dt><dd>Darcy–Weisbach (f = 64/Re o Swamee–Jain) y pérdidas singulares</dd>
+      <dt>P<sub>abs</sub> &lt; P<sub>v</sub></dt><dd>Cavitación: el líquido se vaporiza en la garganta</dd>
+    </dl>
+    <div class="keys">
+      <span><kbd>Espacio</kbd>pausa</span><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>cámaras</span><span><kbd>←</kbd><kbd>→</kbd>nivel h</span><span><kbd>↑</kbd><kbd>↓</kbd>garganta D₂</span><span><kbd>C</kbd>constante / vaciado</span><span><kbd>L</kbd>pérdidas</span><span><kbd>V</kbd><kbd>S</kbd><kbd>E</kbd>capas</span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // Aviso si la librería 3D no llega (sin conexión o CDN bloqueada).
+  window.__fluidos_ready = false;
+  window.__fluidos_fail = function (msg) {
+    if (window.__fluidos_ready === true) return;
+    var l = document.getElementById('loader');
+    if (!l) return;
+    l.classList.add('err');
+    l.querySelector('.ld-txt').textContent = msg || 'No se pudo cargar Three.js desde la CDN. Comprueba la conexión a Internet y recarga la página: el simulador descarga la librería 3D al abrirse.';
+  };
+  setTimeout(function () { window.__fluidos_fail(); }, 15000);
+</script>
+
+<script type="module" onerror="window.__fluidos_fail()">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* =====================================================================
+   1. CONSTANTES FÍSICAS Y GEOMETRÍA DEL MONTAJE (SI, metros)
+   ===================================================================== */
+const G = 9.81;                  // m/s²
+const PATM = 101325;             // Pa
+const ROUGH = 1.5e-6;            // rugosidad absoluta del acrílico (m)
+const K_ENT = 0.5, K_CON = 0.04, K_DIF = 0.15, K_NOZ = 0.04;   // pérdidas singulares
+const LIM = { h: [0.20, 2.50], D1: [4, 12], D2: [1.5, 12] };
+const DN = 2.5;                  // diámetro de la boquilla de salida (cm)
+
+const Y_AX = 0.62;               // eje de la tubería sobre el suelo
+const Y_TRAY = 0.12;             // borde graduado del canal receptor
+const H_N = Y_AX - Y_TRAY;       // altura de la boquilla sobre la regla (0,50 m)
+const R_T = 0.28;                // radio interior del tanque
+const A_T = Math.PI * R_T * R_T;
+const TANK_BOT = Y_AX - 0.12;    // fondo interior del tanque
+const TANK_TOP = Y_AX + 2.68;
+const X0 = R_T;                  // la tubería nace en la pared del tanque
+// tramos de la tubería (m): recta D1, cono convergente, garganta, difusor, recta D3 = D1, tobera
+const SEG = { a: 0.50, c: 0.12, t: 0.06, d: 0.30, b: 0.42, n: 0.07, tip: 0.03 };
+const sC = SEG.a, sT = sC + SEG.c, sD = sT + SEG.t, sB = sD + SEG.d, sN = sB + SEG.b, sTip = sN + SEG.n, LT = sTip + SEG.tip;
+const S_PZ = [0.30, sT + SEG.t / 2, sB + 0.21];     // tomas piezométricas 1, 2 (garganta) y 3
+const X_N = X0 + LT;             // boquilla
+const TRAY_LEN = 2.62;
+const PZ_TOP = Y_AX + 2.72;
+
+// Propiedades a 20 °C; presión de vapor en Pa
+const FLUIDS = [
+  { id: 'agua',      name: 'Agua dulce',        rho: 1000,  mu: 1.002e-3, pv: 2339, css: '#3B82F6', col: 0x2f86f0, op: 0.50, met: 0.0, rou: 0.06 },
+  { id: 'salada',    name: 'Agua salada',       rho: 1025,  mu: 1.08e-3,  pv: 2290, css: '#14B8A6', col: 0x1aa59c, op: 0.55, met: 0.0, rou: 0.06 },
+  { id: 'aceite',    name: 'Aceite hidráulico', rho: 850,   mu: 0.070,    pv: 5,    css: '#D97706', col: 0xd08a1c, op: 0.66, met: 0.0, rou: 0.10 },
+  { id: 'glicerina', name: 'Glicerina',         rho: 1260,  mu: 1.41,     pv: 0.1,  css: '#D6D3A8', col: 0xe3dfb4, op: 0.38, met: 0.0, rou: 0.04 },
+  { id: 'mercurio',  name: 'Mercurio',          rho: 13600, mu: 1.55e-3,  pv: 0.17, css: '#9CA3AF', col: 0xc9cdd3, op: 0.94, met: 1.0, rou: 0.12 },
+];
+
+/* =====================================================================
+   2. UTILIDADES
+   ===================================================================== */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const V3 = THREE.Vector3;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const smoothC = (t) => 0.5 - 0.5 * Math.cos(Math.PI * clamp(t, 0, 1));
+const trimTo = (v, maxD, minD) => {
+  let s = v.toFixed(maxD);
+  if (maxD > minD) s = s.replace(new RegExp('0{1,' + (maxD - minD) + '}$'), '');
+  return s;
+};
+const fx = (v, d) => (Number.isFinite(v) ? (Math.abs(v) < 0.5 * Math.pow(10, -d) ? (0).toFixed(d) : v.toFixed(d)).replace('-', '−') : '—');
+const fsig = (v, n = 4) => {           // n cifras significativas, sin notación científica salvo extremos
+  if (!Number.isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a === 0) return '0';
+  if (a >= 1e6 || a < 1e-4) return v.toExponential(2).replace('e', '·10^').replace('-', '−');
+  const d = Math.max(0, n - 1 - Math.floor(Math.log10(a)));
+  return v.toFixed(Math.min(d, 6)).replace('-', '−');
+};
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+function niceStep(range, n) {
+  const raw = Math.max(1e-9, range / n), p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+
+/* =====================================================================
+   3. ESTADO Y MOTOR FÍSICO
+   ===================================================================== */
+const S = {
+  h: 1.00, h0: 1.00, D1: 8.0, D2: 4.0, fluid: 'agua', losses: false, mode: 'const',
+  speed: 1, paused: false, vectors: true, streams: false, energy: true, dis: 'Q',
+};
+const P = {};
+const FL = () => FLUIDS.find((f) => f.id === S.fluid);
+
+// Muestreo geométrico del eje: s ∈ [0, LT], diámetro D(s) en metros
+const NG = 240;
+const GS = new Float64Array(NG + 1), GD = new Float64Array(NG + 1), GA = new Float64Array(NG + 1);
+const PV = new Float64Array(NG + 1), PH = new Float64Array(NG + 1), PE = new Float64Array(NG + 1), PK = new Float64Array(NG + 1), CUM = new Float64Array(NG + 1);
+let A1m = 0, A2m = 0, ANm = 0;
+
+function Dprof(s) {                      // diámetro (cm) en la abscisa s del eje
+  const { D1, D2 } = S;
+  if (s < sC) return D1;
+  if (s < sT) return lerp(D1, D2, (s - sC) / SEG.c);          // cono convergente
+  if (s < sD) return D2;                                        // garganta
+  if (s < sB) return lerp(D2, D1, (s - sD) / SEG.d);           // difusor (D3 = D1)
+  if (s < sN) return D1;
+  if (s < sTip) return lerp(D1, DN, smoothC((s - sN) / SEG.n)); // tobera
+  return DN;
+}
+function buildGeomSamples() {
+  for (let i = 0; i <= NG; i++) {
+    const s = LT * i / NG, D = Dprof(s) / 100;
+    GS[i] = s; GD[i] = D; GA[i] = Math.PI * D * D / 4;
+  }
+  A1m = Math.PI * Math.pow(S.D1 / 100, 2) / 4;
+  A2m = Math.PI * Math.pow(S.D2 / 100, 2) / 4;
+  ANm = Math.PI * Math.pow(DN / 100, 2) / 4;
+}
+const idxAt = (s) => clamp(Math.round(s / LT * NG), 0, NG);
+
+// Factor de fricción: laminar 64/Re, turbulento Swamee–Jain, transición interpolada
+function fric(Re, D) {
+  const lam = 64 / Math.max(Re, 1e-6);
+  if (Re <= 2300) return lam;
+  const sj = (r) => 0.25 / Math.pow(Math.log10(ROUGH / (3.7 * D) + 5.74 / Math.pow(r, 0.9)), 2);
+  if (Re >= 4000) return sj(Re);
+  return lerp(64 / 2300, sj(4000), (Re - 2300) / 1700);
+}
+// Pérdida de carga acumulada (m) para una velocidad de salida vn; step > 1 para curvas rápidas
+function headLoss(vn, fl, step = 1, cum = null) {
+  const Q = ANm * vn, g2 = 2 * G, vT = Q / A2m;
+  let H = K_ENT * Math.pow(Q / GA[0], 2) / g2;
+  if (cum) cum[0] = H;
+  const kc = K_CON * vT * vT / g2 / SEG.c;
+  const kd = K_DIF * Math.pow(1 - A2m / A1m, 2) * vT * vT / g2 / SEG.d;
+  const kn = K_NOZ * vn * vn / g2 / SEG.n;
+  for (let i = step; i <= NG; i += step) {
+    const j = i - step, sm = (GS[i] + GS[j]) / 2, ds = GS[i] - GS[j];
+    const D = (GD[i] + GD[j]) / 2, A = Math.PI * D * D / 4, v = Q / A;
+    const Re = fl.rho * v * D / fl.mu;
+    H += fric(Re, D) * ds / D * v * v / g2;
+    if (sm >= sC && sm < sT) H += kc * ds;
+    else if (sm >= sD && sm < sB) H += kd * ds;
+    else if (sm >= sN && sm < sTip) H += kn * ds;
+    if (cum) cum[i] = H;
+  }
+  return H;
+}
+// Velocidad de salida que cumple la ecuación de energía  h = vs²/2g + hL(vs)
+function exitVelocity(h, fl, losses, step = 2) {
+  const v0 = Math.sqrt(2 * G * Math.max(h, 0));
+  if (!losses || v0 === 0) return v0;
+  let lo = 0, hi = v0;
+  for (let k = 0; k < 46; k++) {
+    const m = (lo + hi) / 2;
+    if (m * m / (2 * G) + headLoss(m, fl, step) > h) hi = m; else lo = m;
+  }
+  return (lo + hi) / 2;
+}
+
+function solve() {
+  const fl = FL(), h = S.h, g2 = 2 * G;
+  P.fl = fl;
+  P.vs = exitVelocity(h, fl, S.losses, 1);     // mismo paso que hL del panel: balance de energía exacto
+  P.Q = ANm * P.vs;
+  P.Cv = h > 0 ? P.vs / Math.sqrt(g2 * h) : 1;
+  if (S.losses) P.hL = headLoss(P.vs, fl, 1, CUM); else { CUM.fill(0); P.hL = 0; }
+  let vmax = 0, pmin = Infinity, imin = 0;
+  for (let i = 0; i <= NG; i++) {
+    const v = P.Q / GA[i];
+    PV[i] = v; PE[i] = h - CUM[i]; PH[i] = PE[i] - v * v / g2; PK[i] = fl.rho * G * PH[i] / 1000;
+    if (v > vmax) vmax = v;
+    if (PK[i] < pmin) { pmin = PK[i]; imin = i; }
+  }
+  P.vmax = Math.max(vmax, P.vs);
+  P.v1 = P.Q / A1m; P.v2 = P.Q / A2m; P.v3 = P.v1;
+  P.pz = S_PZ.map((s) => { const i = idxAt(s); return { i, D: GD[i] * 100, v: PV[i], hp: PH[i], P: PK[i] }; });
+  P.P1 = P.pz[0].P; P.P2 = P.pz[1].P; P.dP = P.P1 - P.P2;
+  P.dPideal = 0.5 * fl.rho * (P.v2 * P.v2 - P.v1 * P.v1) / 1000;
+  P.beta = S.D2 / S.D1;
+  P.Qventuri = P.dP > 0 ? A2m * Math.sqrt(2 * P.dP * 1000 / (fl.rho * (1 - Math.pow(P.beta, 4)))) : NaN;
+  P.Re1 = fl.rho * P.v1 * (S.D1 / 100) / fl.mu;
+  P.Re2 = fl.rho * P.v2 * (S.D2 / 100) / fl.mu;
+  P.reg = P.Re1 < 2300 ? 'lam' : P.Re1 < 4000 ? 'tra' : 'tur';
+  P.f1 = fric(P.Re1, S.D1 / 100);
+  P.tof = Math.sqrt(2 * H_N / G);
+  P.x = P.vs * P.tof;
+  P.vImp = Math.hypot(P.vs, G * P.tof);
+  P.angImp = Math.atan2(G * P.tof, Math.max(P.vs, 1e-9)) * 180 / Math.PI;
+  P.Pbottom = fl.rho * G * (h + (Y_AX - TANK_BOT)) / 1000;
+  P.PabsMin = PATM / 1000 + pmin;
+  P.sMin = GS[imin];
+  P.pvk = fl.pv / 1000;
+  P.margin = P.PabsMin - P.pvk;
+  P.cav = P.margin <= 0 ? 'cav' : P.margin < 20 ? 'near' : 'ok';
+  P.subatm = P.pz.some((p) => p.hp < 0);
+  P.hMin = Math.max(0.05, S.D1 / 200 + 0.012);
+  P.vol = A_T * (h + (Y_AX - TANK_BOT)) * 1000;
+  P.dhdt = S.mode === 'drain' && !drained ? -P.Q / A_T : 0;
+  // vaciado de Torricelli con el Cv actual: t = (A_T / (Cv A_b)) √(2/g) (√h − √h_min)
+  P.tDrain = (A_T / (Math.max(P.Cv, 1e-6) * ANm)) * Math.sqrt(2 / G) * (Math.sqrt(h) - Math.sqrt(Math.min(h, P.hMin)));
+}
+// Caudal y alcance para un nivel dado (curvas de la bahía inferior)
+function qAt(h, losses = S.losses, step = 4) {
+  const vs = exitVelocity(h, FL(), losses, step);
+  return { Q: ANm * vs, x: vs * Math.sqrt(2 * H_N / G), vs };
+}
+
+let drained = false, simT = 0, hist = [], histAcc = 0;
+
+/* =====================================================================
+   4. RENDERIZADOR, CÁMARAS Y POSTPROCESO
+   ===================================================================== */
+const stage = $('#stage');
+const canvas = $('#gl');
+const HAS_WEBGL = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } })();
+if (!HAS_WEBGL) {
+  window.__fluidos_ready = 'sin-webgl';
+  const l = $('#loader'); l.classList.add('err');
+  l.querySelector('.ld-txt').textContent = 'Este navegador no tiene WebGL disponible. Activa la aceleración por hardware en la configuración del navegador o usa Chrome, Edge o Firefox actualizados.';
+  await new Promise(() => {});
+}
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(DPR);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const MAX_ANISO = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x090c11);
+scene.fog = new THREE.Fog(0x090c11, 9, 26);
+
+let envTex = null;
+{
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const room = new RoomEnvironment(renderer);
+  envTex = pmrem.fromScene(room, 0.04).texture;
+  scene.environment = envTex;
+  if (typeof room.dispose === 'function') room.dispose();
+  pmrem.dispose();
+}
+
+let lostTimer = 0;
+canvas.addEventListener('webglcontextlost', () => {
+  const l = $('#loader'); l.classList.remove('done', 'err');
+  l.querySelector('.ld-txt').textContent = 'La tarjeta gráfica se reinició. Recuperando el laboratorio…';
+  lostTimer = setTimeout(() => { l.classList.add('err'); l.querySelector('.ld-txt').textContent = 'La tarjeta gráfica no responde. Recarga la página (F5) para continuar.'; }, 10000);
+}, false);
+canvas.addEventListener('webglcontextrestored', () => {
+  clearTimeout(lostTimer);
+  history.replaceState(null, '', '#' + stateHash());
+  location.reload();
+}, false);
+
+const GL_NAME = (() => {
+  try {
+    const gl = renderer.getContext();
+    if (/firefox/i.test(navigator.userAgent)) return String(gl.getParameter(gl.RENDERER));
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    return String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+  } catch (e) { return ''; }
+})();
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(GL_NAME);
+// Equipo modesto: 2 núcleos o menos, o 2 GB de memoria o menos (cuando el navegador lo informa)
+const LOWEND = (navigator.hardwareConcurrency || 4) <= 2 || (navigator.deviceMemory || 8) <= 2;
+const Q = { high: true, scale: 1, slow: 0, good: 0, retry: 0, settle: 0, t0: performance.now(), wT: performance.now(), wF: 0 };
+const renderPR = () => (Q.high ? DPR : Math.min(DPR, 1) * (SOFTWARE_GL ? 0.5 : 0.7)) * Q.scale;
+
+const persp = new THREE.PerspectiveCamera(34, 1, 0.02, 80);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 80);
+let activeCam = persp, aspect = 1, orthoHalfW = 1, CH = 1;   // CH: alto CSS del lienzo en caché (evita leer el layout en cada fotograma)
+
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 }));
+composer.setPixelRatio(DPR);
+const renderPass = new RenderPass(scene, persp);
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.35, 0.45, 0.88);
+composer.addPass(renderPass);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+const ctlP = new OrbitControls(persp, canvas);
+Object.assign(ctlP, { enableDamping: true, dampingFactor: 0.08, minDistance: 0.25, maxDistance: 22, maxPolarAngle: Math.PI * 0.495, rotateSpeed: 0.7, zoomSpeed: 0.9 });
+const ctlO = new OrbitControls(ortho, canvas);
+Object.assign(ctlO, { enableDamping: true, dampingFactor: 0.1, enableRotate: false, minZoom: 0.6, maxZoom: 16, enabled: false });
+ctlO.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+ctlO.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+
+/* =====================================================================
+   5. MATERIALES Y TEXTURAS PROCEDURALES
+   ===================================================================== */
+function canvasTex(c) {
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(MAX_ANISO, 4);
+  return t;
+}
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
+const MONO = '"JetBrains Mono", ui-monospace, Consolas, monospace';
+
+// Regla vertical del tanque: 0 en el eje de la tubería, de 0 a 2,60 m
+function tankRulerTexture() {
+  const W = 128, H = 4096, len = 2.6, [c, g] = makeCanvas(W, H);
+  g.fillStyle = '#10151d'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#cfd8e6'; g.font = `600 30px ${MONO}`; g.textBaseline = 'middle'; g.textAlign = 'right';
+  for (let cm = 0; cm <= 260; cm++) {
+    const y = H - cm / 100 / len * H;
+    const w = cm % 10 === 0 ? 52 : cm % 5 === 0 ? 34 : 18;
+    g.globalAlpha = cm % 10 === 0 ? 1 : 0.7;
+    g.fillRect(0, Math.round(y) - 2, w, cm % 10 === 0 ? 4 : 2);
+    if (cm % 10 === 0 && cm > 0 && cm < 260) g.fillText((cm / 100).toFixed(1), W - 6, y);
+  }
+  g.globalAlpha = 1; g.textBaseline = 'bottom'; g.fillText('0 m', W - 6, H - 6);
+  return canvasTex(c);
+}
+// Tablero de los piezómetros: retícula de 1, 5 y 10 cm con cotas en metros
+const PZB = { x0: X0 + S_PZ[0] - 0.12, x1: X0 + S_PZ[2] + 0.12, y0: Y_AX + 0.07, y1: PZ_TOP };
+function boardTexture() {
+  const wM = PZB.x1 - PZB.x0, hM = PZB.y1 - PZB.y0;
+  const H = 4096, W = Math.round(H * wM / hM), [c, g] = makeCanvas(W, H);
+  const ppm = H / hM;
+  g.fillStyle = '#0e131b'; g.fillRect(0, 0, W, H);
+  for (let cm = Math.ceil((PZB.y0 - Y_AX) * 100); cm <= Math.floor((PZB.y1 - Y_AX) * 100); cm++) {
+    const y = H - ((cm / 100) - (PZB.y0 - Y_AX)) * ppm;
+    if (cm % 10 === 0) { g.fillStyle = 'rgba(200,214,235,.22)'; g.fillRect(0, Math.round(y) - 1, W, 3); }
+    else if (cm % 5 === 0) { g.fillStyle = 'rgba(200,214,235,.10)'; g.fillRect(0, Math.round(y), W, 2); }
+    else { g.fillStyle = 'rgba(200,214,235,.05)'; g.fillRect(0, Math.round(y), W, 1); }
+    const tw = cm % 10 === 0 ? 40 : cm % 5 === 0 ? 26 : 14;
+    g.fillStyle = 'rgba(207,216,230,.8)'; g.fillRect(0, Math.round(y), tw, 2); g.fillRect(W - tw, Math.round(y), tw, 2);
+    if (cm % 10 === 0) {
+      g.font = `600 26px ${MONO}`; g.textBaseline = 'middle';
+      g.textAlign = 'left'; g.fillText((cm / 100).toFixed(1), 46, y);
+      g.textAlign = 'right'; g.fillText((cm / 100).toFixed(1), W - 46, y);
+    }
+  }
+  g.strokeStyle = 'rgba(14,165,233,.35)'; g.lineWidth = 4; g.strokeRect(2, 2, W - 4, H - 4);
+  return canvasTex(c);
+}
+// Regla horizontal del canal receptor: 0 en la vertical de la boquilla
+function trayRulerTexture() {
+  const W = 4096, H = 112, len = TRAY_LEN, [c, g] = makeCanvas(W, H);
+  g.fillStyle = '#10151d'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#cfd8e6'; g.font = `600 30px ${MONO}`; g.textBaseline = 'alphabetic'; g.textAlign = 'center';
+  const total = Math.round(len * 100);
+  for (let cm = 0; cm <= total; cm++) {
+    const x = cm / total * W;
+    const h = cm % 10 === 0 ? 50 : cm % 5 === 0 ? 32 : 16;
+    g.globalAlpha = cm % 10 === 0 ? 1 : 0.7;
+    g.fillRect(Math.round(x) - 1, 0, cm % 10 === 0 ? 3 : 2, h);
+    if (cm % 10 === 0 && cm > 0 && cm < total) g.fillText((cm / 100).toFixed(1), x, 96);
+  }
+  g.globalAlpha = 1; g.textAlign = 'left'; g.fillText('0 m', 8, 96);
+  return canvasTex(c);
+}
+// Manómetro de fondo: esfera dibujada al vuelo
+const [gaugeC, gaugeG] = makeCanvas(256, 256);
+const gaugeTex = canvasTex(gaugeC);
+let gaugeLast = '';
+function drawGauge() {
+  const fl = FL(), full = niceStep(fl.rho * G * (LIM.h[1] + Y_AX - TANK_BOT) / 1000 * 1.05, 5) * 5;
+  const key = P.Pbottom.toFixed(2) + '|' + full;
+  if (key === gaugeLast) return; gaugeLast = key;
+  const g = gaugeG, cx = 128, cy = 128, R = 118;
+  g.clearRect(0, 0, 256, 256);
+  g.fillStyle = '#e8ecf1'; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#1b2230'; g.lineWidth = 3;
+  const a0 = Math.PI * 0.75, span = Math.PI * 1.5;
+  for (let k = 0; k <= 25; k++) {
+    const a = a0 + span * k / 25, r1 = k % 5 === 0 ? R - 26 : R - 16;
+    g.lineWidth = k % 5 === 0 ? 4 : 2;
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * (R - 6), cy + Math.sin(a) * (R - 6)); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke();
+    if (k % 5 === 0) {
+      g.fillStyle = '#1b2230'; g.font = `600 19px ${MONO}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(fsig(full * k / 25, 3).replace(/\.0+$/, ''), cx + Math.cos(a) * (R - 46), cy + Math.sin(a) * (R - 46));
+    }
+  }
+  g.fillStyle = '#5b6474'; g.font = `600 18px ${MONO}`; g.fillText('kPa', cx, cy + 40);
+  g.fillStyle = '#0b0e13'; g.font = `700 24px ${MONO}`; g.fillText(P.Pbottom.toFixed(2), cx, cy + 68);
+  const a = a0 + span * clamp(P.Pbottom / full, 0, 1.02);
+  g.strokeStyle = '#d6332f'; g.lineWidth = 5; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(cx - Math.cos(a) * 16, cy - Math.sin(a) * 16); g.lineTo(cx + Math.cos(a) * (R - 22), cy + Math.sin(a) * (R - 22)); g.stroke();
+  g.fillStyle = '#1b2230'; g.beginPath(); g.arc(cx, cy, 9, 0, Math.PI * 2); g.fill();
+  gaugeTex.needsUpdate = true;
+}
+
+const M = {
+  floor: new THREE.MeshStandardMaterial({ color: 0x0b0f16, metalness: 0.1, roughness: 0.92 }),
+  frame: new THREE.MeshStandardMaterial({ color: 0x1a2130, metalness: 0.65, roughness: 0.42, envMapIntensity: 0.6 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0x8c96a5, metalness: 1, roughness: 0.32 }),
+  chrome: new THREE.MeshStandardMaterial({ color: 0xe1e7ef, metalness: 1, roughness: 0.16 }),
+  brass: new THREE.MeshStandardMaterial({ color: 0xcf9f45, metalness: 1, roughness: 0.3 }),
+  rubber: new THREE.MeshStandardMaterial({ color: 0x101318, metalness: 0, roughness: 0.9 }),
+  red: new THREE.MeshStandardMaterial({ color: 0xb8232f, metalness: 0.3, roughness: 0.4 }),
+  dark: new THREE.MeshStandardMaterial({ color: 0x151a22, metalness: 0.3, roughness: 0.55 }),
+  acrylic: new THREE.MeshPhysicalMaterial({ color: 0xd6e4f5, metalness: 0, roughness: 0.12, transparent: true, opacity: 0.09, depthWrite: false, side: THREE.DoubleSide, clearcoat: 0.4, clearcoatRoughness: 0.1, envMapIntensity: 0.3 }),
+  acrylicEdge: new THREE.MeshStandardMaterial({ color: 0xbfd2ea, metalness: 0, roughness: 0.2, transparent: true, opacity: 0.4, depthWrite: false, envMapIntensity: 0.4 }),
+  tankRuler: new THREE.MeshStandardMaterial({ map: tankRulerTexture(), metalness: 0.2, roughness: 0.6 }),
+  board: new THREE.MeshStandardMaterial({ map: boardTexture(), metalness: 0.2, roughness: 0.7 }),
+  trayRuler: new THREE.MeshStandardMaterial({ map: trayRulerTexture(), metalness: 0.2, roughness: 0.6 }),
+  gauge: new THREE.MeshBasicMaterial({ map: gaugeTex }),
+  fluid: new THREE.MeshStandardMaterial({ color: 0x2f86f0, metalness: 0, roughness: 0.3, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.25 }),
+  bulk: new THREE.MeshStandardMaterial({ color: 0x2f86f0, metalness: 0, roughness: 0.3, transparent: true, opacity: 0.4, depthWrite: false, envMapIntensity: 0.25 }),
+  surf: new THREE.MeshStandardMaterial({ color: 0x8cc4ff, metalness: 0, roughness: 0.15, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.5 }),
+  warn: new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.9, depthWrite: false }),
+  mark: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
+};
+function applyFluidLook() {
+  const fl = FL();
+  for (const m of [M.fluid, M.bulk]) {
+    m.color.setHex(fl.col); m.metalness = fl.met; m.roughness = fl.met > 0.5 ? 0.18 : 0.3;
+    m.envMapIntensity = fl.met > 0.5 ? 1.0 : 0.25;
+    m.emissive.setHex(fl.col).multiplyScalar(fl.met > 0.5 ? 0.02 : 0.14);
+  }
+  M.fluid.opacity = fl.op; M.bulk.opacity = fl.met > 0.5 ? 0.92 : fl.op * 0.8;
+  M.surf.color.setHex(fl.col).lerp(new THREE.Color(0xffffff), fl.met > 0.5 ? 0.15 : 0.35);
+  M.surf.metalness = fl.met; M.surf.opacity = fl.met > 0.5 ? 0.95 : 0.6;
+}
+function mesh(geo, mat, opts = {}) {
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = opts.cast !== false; m.receiveShadow = opts.receive !== false;
+  return m;
+}
+const transparentMesh = (geo, mat, order = 1) => { const m = mesh(geo, mat, { cast: false, receive: false }); m.renderOrder = order; return m; };
+
+/* =====================================================================
+   6. ESCENA: SUELO, LUCES, TANQUE Y ALIMENTACIÓN
+   ===================================================================== */
+let keyLight = null;
+{
+  const floor = mesh(new THREE.CircleGeometry(20, 72), M.floor, { cast: false });
+  floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  const grid = new THREE.GridHelper(30, 120, 0x26405c, 0x142233);
+  grid.material.transparent = true; grid.material.opacity = 0.3; grid.material.depthWrite = false;
+  grid.position.y = 0.001; scene.add(grid);
+
+  scene.add(new THREE.HemisphereLight(0xa9c8ff, 0x080b12, 0.6));
+  const key = keyLight = new THREE.DirectionalLight(0xfff3e4, 2.2);
+  key.position.set(-1.5, 6.5, 4.5); key.target.position.set(1.6, 1.0, 0);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -3.2, right: 3.4, top: 3.4, bottom: -2.4, near: 1, far: 16 });
+  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+  scene.add(key, key.target);
+  const rim = new THREE.DirectionalLight(0x62c9ff, 1.0); rim.position.set(4.5, 2.5, -4); scene.add(rim);
+  const fill = new THREE.DirectionalLight(0xc6d6ff, 0.5); fill.position.set(5, 1.5, 4); scene.add(fill);
+}
+
+const tank = { group: new THREE.Group() };
+scene.add(tank.group);
+{
+  const H = TANK_TOP - TANK_BOT;
+  const shell = transparentMesh(new THREE.CylinderGeometry(R_T + 0.006, R_T + 0.006, H, 72, 1, true), M.acrylic, 3);
+  shell.position.y = TANK_BOT + H / 2; tank.group.add(shell);
+  for (const y of [TANK_TOP, TANK_BOT + H * 0.5]) {
+    const ring = mesh(new THREE.TorusGeometry(R_T + 0.008, 0.007, 10, 72), M.acrylicEdge, { cast: false });
+    ring.rotation.x = Math.PI / 2; ring.position.y = y; tank.group.add(ring);
+  }
+  const base = mesh(new THREE.CylinderGeometry(R_T + 0.03, R_T + 0.03, 0.035, 72), M.dark);
+  base.position.y = TANK_BOT - 0.0175; tank.group.add(base);
+  // banco soporte
+  const standTop = TANK_BOT - 0.035;
+  const plate = mesh(new THREE.BoxGeometry(0.72, 0.03, 0.72), M.frame); plate.position.y = standTop - 0.015; tank.group.add(plate);
+  const legH = standTop - 0.03;
+  for (const dx of [-1, 1]) for (const dz of [-1, 1]) {
+    const leg = mesh(new THREE.BoxGeometry(0.045, legH, 0.045), M.frame); leg.position.set(dx * 0.31, legH / 2, dz * 0.31); tank.group.add(leg);
+    const foot = mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.02, 20), M.rubber); foot.position.set(dx * 0.31, 0.01, dz * 0.31); tank.group.add(foot);
+  }
+  for (const dz of [-1, 1]) { const b = mesh(new THREE.BoxGeometry(0.62, 0.035, 0.03), M.frame); b.position.set(0, 0.12, dz * 0.31); tank.group.add(b); }
+  // regla vertical sobre el frente del tanque
+  const rul = mesh(new THREE.PlaneGeometry(0.08, 2.6), M.tankRuler, { cast: false });
+  rul.position.set(0, Y_AX + 1.3, R_T + 0.011); tank.group.add(rul);
+}
+// agua del tanque: cilindro escalado + superficie libre
+tank.water = transparentMesh(new THREE.CylinderGeometry(R_T - 0.004, R_T - 0.004, 1, 72, 1, true), M.bulk, 1);
+tank.surf = transparentMesh(new THREE.CircleGeometry(R_T - 0.004, 72), M.surf, 2);
+tank.surf.rotation.x = -Math.PI / 2;
+tank.bottom = transparentMesh(new THREE.CircleGeometry(R_T - 0.004, 72), M.bulk, 1);
+tank.bottom.rotation.x = -Math.PI / 2; tank.bottom.position.y = TANK_BOT + 0.001;
+tank.group.add(tank.water, tank.surf, tank.bottom);
+// marcador del nivel sobre la regla
+tank.levelMark = mesh(new THREE.BoxGeometry(0.075, 0.006, 0.006), M.mark, { cast: false });
+tank.levelMark.position.set(0, Y_AX, R_T + 0.015); tank.group.add(tank.levelMark);
+// manómetro del fondo
+{
+  const ang = -0.62, nx = Math.sin(ang), nz = Math.cos(ang);
+  const gg = new THREE.Group();
+  gg.position.set(nx * (R_T + 0.075), TANK_BOT + 0.075, nz * (R_T + 0.075));
+  gg.lookAt(nx * 10, TANK_BOT + 0.075, nz * 10);
+  const housing = mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.03, 40), M.chrome); housing.rotation.x = Math.PI / 2; gg.add(housing);
+  const face = mesh(new THREE.CircleGeometry(0.05, 48), M.gauge, { cast: false }); face.position.z = 0.0155; gg.add(face);
+  const glass = transparentMesh(new THREE.CircleGeometry(0.05, 48), M.acrylicEdge, 4); glass.position.z = 0.017; gg.add(glass);
+  const stub = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.07, 12), M.brass); stub.rotation.x = Math.PI / 2; stub.position.z = -0.045; gg.add(stub);
+  scene.add(gg);
+}
+// alimentación: columna, brazo, válvula de volante y chorro de llenado
+const sup = { group: new THREE.Group(), wheel: new THREE.Group(), open: 1 };
+scene.add(sup.group);
+{
+  const xc = -0.56, yTop = TANK_TOP + 0.22;
+  const col = mesh(new THREE.CylinderGeometry(0.022, 0.022, yTop, 20), M.steel); col.position.set(xc, yTop / 2, -0.05); sup.group.add(col);
+  const arm = mesh(new THREE.CylinderGeometry(0.022, 0.022, -xc + 0.02, 20), M.steel); arm.rotation.z = Math.PI / 2; arm.position.set(xc / 2 + 0.01, yTop, -0.05); sup.group.add(arm);
+  const elbow = mesh(new THREE.SphereGeometry(0.03, 16, 12), M.steel); elbow.position.set(xc, yTop, -0.05); sup.group.add(elbow);
+  const drop = mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.1, 20), M.steel); drop.position.set(0.02, yTop - 0.05, -0.05); sup.group.add(drop);
+  const vb = mesh(new THREE.BoxGeometry(0.07, 0.09, 0.07), M.brass); vb.position.set(xc, 1.25, -0.05); sup.group.add(vb);
+  sup.wheel.position.set(xc, 1.25, 0.03);
+  const rimW = mesh(new THREE.TorusGeometry(0.055, 0.008, 10, 36), M.red); sup.wheel.add(rimW);
+  for (let k = 0; k < 3; k++) { const sp = mesh(new THREE.BoxGeometry(0.11, 0.008, 0.008), M.red); sp.rotation.z = k * Math.PI / 3; sup.wheel.add(sp); }
+  const stem = mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.08, 10), M.chrome); stem.rotation.x = Math.PI / 2; stem.position.set(xc, 1.25, -0.01); sup.group.add(stem);
+  sup.group.add(sup.wheel);
+  sup.outletY = yTop - 0.1;
+}
+// cilindro unitario estrechado abajo: el chorro se acelera al caer (continuidad)
+sup.stream = transparentMesh(new THREE.CylinderGeometry(0.55, 1, 1, 18, 1, true), M.fluid, 2);
+sup.stream.position.x = 0.02; sup.stream.position.z = -0.05;
+scene.add(sup.stream);
+sup.ripple = transparentMesh(new THREE.RingGeometry(0.6, 1, 40), M.surf, 3);
+sup.ripple.rotation.x = -Math.PI / 2; sup.ripple.position.set(0.02, 0, -0.05);
+scene.add(sup.ripple);
+
+/* =====================================================================
+   7. TUBERÍA VENTURI, PIEZÓMETROS, SOPORTES Y CANAL RECEPTOR
+   ===================================================================== */
+const pipe = { group: new THREE.Group(), shell: null, fluid: null, flanges: [], supports: [] };
+scene.add(pipe.group);
+pipe.group.position.set(X0, Y_AX, 0);
+function latheAlongX(radiusFn, nSeg = 48) {
+  const pts = [], N = 180;
+  const extra = [0, sC, sT, sD, sB, sN, sTip, LT];
+  const ss = new Set(); for (let i = 0; i <= N; i++) ss.add(+(LT * i / N).toFixed(5)); extra.forEach((s) => ss.add(+s.toFixed(5)));
+  [...ss].sort((a, b) => a - b).forEach((s) => pts.push(new THREE.Vector2(radiusFn(s), s)));
+  const geo = new THREE.LatheGeometry(pts, nSeg);
+  geo.rotateZ(-Math.PI / 2);            // eje de revolución Y → X
+  return geo;
+}
+const flangeGeo = new THREE.CylinderGeometry(1, 1, 1, 40); flangeGeo.rotateZ(Math.PI / 2);
+const FLANGE_S = [0.012, sC - 0.012, sB + 0.012, sN - 0.006];
+for (let i = 0; i < FLANGE_S.length; i++) { const f = mesh(flangeGeo, M.steel); pipe.group.add(f); pipe.flanges.push(f); }
+const tipRing = mesh(new THREE.TorusGeometry(DN / 200 + 0.004, 0.0035, 10, 40), M.brass);
+tipRing.rotation.y = Math.PI / 2; tipRing.position.x = LT; pipe.group.add(tipRing);
+// soportes de la tubería
+for (const s of [0.16, sB + 0.08]) {
+  const g = new THREE.Group();
+  const post = mesh(new THREE.BoxGeometry(0.035, 1, 0.035), M.frame); g.add(post);
+  const foot = mesh(new THREE.BoxGeometry(0.18, 0.02, 0.18), M.frame); g.add(foot);
+  const saddle = mesh(new THREE.BoxGeometry(0.05, 0.012, 0.09), M.rubber); g.add(saddle);
+  g.userData = { s, post, foot, saddle };
+  g.position.set(X0 + s, 0, 0);
+  scene.add(g); pipe.supports.push(g);
+}
+// piezómetros: tubo de vidrio, columna de fluido, menisco, collarín e indicador de vacío
+const pz = [];
+const PZ_R = 0.0095;
+for (let k = 0; k < 3; k++) {
+  const o = {};
+  o.x = X0 + S_PZ[k];
+  o.glass = transparentMesh(new THREE.CylinderGeometry(PZ_R, PZ_R, 1, 20, 1, true), M.acrylic, 3);
+  o.col = transparentMesh(new THREE.CylinderGeometry(PZ_R - 0.0025, PZ_R - 0.0025, 1, 16, 1, false), M.fluid, 2);
+  o.men = transparentMesh(new THREE.CircleGeometry(PZ_R - 0.0025, 20), M.surf, 3); o.men.rotation.x = -Math.PI / 2;
+  o.collar = mesh(new THREE.CylinderGeometry(PZ_R + 0.006, PZ_R + 0.006, 0.03, 20), M.brass);
+  o.cap = mesh(new THREE.TorusGeometry(PZ_R + 0.001, 0.0025, 8, 24), M.acrylicEdge, { cast: false }); o.cap.rotation.x = Math.PI / 2; o.cap.position.set(o.x, PZ_TOP, 0);
+  o.warn = transparentMesh(new THREE.TorusGeometry(PZ_R + 0.012, 0.004, 8, 28), M.warn, 6); o.warn.rotation.x = Math.PI / 2;
+  for (const m of [o.glass, o.col, o.men, o.collar, o.cap, o.warn]) { m.position.x = o.x; scene.add(m); }
+  pz.push(o);
+}
+const board = mesh(new THREE.PlaneGeometry(PZB.x1 - PZB.x0, PZB.y1 - PZB.y0), M.board, { cast: false });
+board.position.set((PZB.x0 + PZB.x1) / 2, (PZB.y0 + PZB.y1) / 2, -0.085); scene.add(board);
+for (const x of [PZB.x0 + 0.02, PZB.x1 - 0.02]) {      // montantes del tablero
+  const st = mesh(new THREE.BoxGeometry(0.03, PZB.y1 + 0.05, 0.03), M.frame);
+  st.position.set(x, (PZB.y1 + 0.05) / 2, -0.105); scene.add(st);
+}
+// canal receptor con regla graduada
+const tray = { group: new THREE.Group() };
+scene.add(tray.group);
+{
+  const x0 = X_N - 0.08, len = TRAY_LEN + 0.16, w = 0.26, cx = x0 + len / 2;
+  const bottom = mesh(new THREE.BoxGeometry(len, 0.012, w), M.dark); bottom.position.set(cx, 0.03, 0); tray.group.add(bottom);
+  for (const dz of [-1, 1]) { const wall = mesh(new THREE.BoxGeometry(len, Y_TRAY - 0.024, 0.012), M.frame); wall.position.set(cx, 0.024 + (Y_TRAY - 0.024) / 2, dz * (w / 2)); tray.group.add(wall); }
+  for (const ex of [x0, x0 + len]) { const end = mesh(new THREE.BoxGeometry(0.012, Y_TRAY - 0.024, w), M.frame); end.position.set(ex, 0.024 + (Y_TRAY - 0.024) / 2, 0); tray.group.add(end); }
+  for (const lx of [x0 + 0.1, cx, x0 + len - 0.1]) { const leg = mesh(new THREE.BoxGeometry(0.04, 0.024, w + 0.02), M.rubber); leg.position.set(lx, 0.012, 0); tray.group.add(leg); }
+  const ruler = mesh(new THREE.BoxGeometry(TRAY_LEN, 0.004, 0.05), [M.frame, M.frame, M.trayRuler, M.frame, M.frame, M.frame], { cast: false });
+  ruler.position.set(X_N + TRAY_LEN / 2, Y_TRAY + 0.002, w / 2 + 0.02); tray.group.add(ruler);
+  tray.water = transparentMesh(new THREE.BoxGeometry(len - 0.03, 0.03, w - 0.03), M.bulk, 1);
+  tray.water.position.set(cx, 0.051, 0); tray.group.add(tray.water);
+  tray.waterY = 0.066;
+}
+tray.mark = mesh(new THREE.BoxGeometry(0.008, 0.012, 0.06), M.mark, { cast: false });
+tray.mark.position.set(X_N, Y_TRAY + 0.008, 0.15); scene.add(tray.mark);
+tray.splash = transparentMesh(new THREE.RingGeometry(0.7, 1, 40), M.surf, 4);
+tray.splash.rotation.x = -Math.PI / 2; scene.add(tray.splash);
+tray.splash2 = transparentMesh(new THREE.RingGeometry(0.85, 1, 40), M.surf, 4);
+tray.splash2.rotation.x = -Math.PI / 2; scene.add(tray.splash2);
+
+function rebuildPipe() {
+  const R = (s) => Dprof(s) / 200;
+  if (pipe.shell) { pipe.group.remove(pipe.shell, pipe.fluid); pipe.shell.geometry.dispose(); pipe.fluid.geometry.dispose(); }
+  pipe.shell = transparentMesh(latheAlongX((s) => R(s) + 0.004), M.acrylic, 3);
+  pipe.fluid = transparentMesh(latheAlongX((s) => R(s) * 0.985, 40), M.fluid, 1);
+  pipe.group.add(pipe.fluid, pipe.shell);
+  FLANGE_S.forEach((s, i) => { const f = pipe.flanges[i]; f.position.x = s; const r = R(s) + 0.016; f.scale.set(0.016, r, r); });
+  for (const g of pipe.supports) {
+    const u = g.userData, top = Y_AX - R(u.s) - 0.004;
+    u.post.scale.y = top - 0.02; u.post.position.y = 0.02 + (top - 0.02) / 2;
+    u.foot.position.y = 0.01; u.saddle.position.y = top - 0.006;
+  }
+  for (let k = 0; k < 3; k++) {
+    const o = pz[k], base = Y_AX + R(S_PZ[k]) + 0.002;
+    o.base = base;
+    o.glass.scale.y = PZ_TOP - base; o.glass.position.y = base + (PZ_TOP - base) / 2;
+    o.collar.position.y = base + 0.012;
+    o.warn.position.y = base + 0.035;
+  }
+  buildStreamlines();
+}
+
+/* =====================================================================
+   8. PARTÍCULAS TRAZADORAS, CHORRO PARABÓLICO, CAVITACIÓN Y CAPAS
+   ===================================================================== */
+const ptVS = `
+  attribute vec3 aCol; varying vec3 vC;
+  uniform float uK, uOrtho, uSize;
+  void main(){
+    vC = aCol;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    float px = uOrtho > 0.5 ? uSize * uK : uSize * uK / max(0.001, -mv.z);
+    gl_PointSize = clamp(px, 1.5, 22.0);
+  }`;
+const ptFS = `
+  varying vec3 vC; uniform float uOpacity;
+  void main(){
+    vec2 d = gl_PointCoord - 0.5; float r = length(d);
+    if (r > 0.5) discard;
+    gl_FragColor = vec4(vC, smoothstep(0.5, 0.3, r) * uOpacity);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }`;
+function pointsMat(size, opacity = 1) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uK: { value: 500 }, uOrtho: { value: 0 }, uSize: { value: size }, uOpacity: { value: opacity } },
+    vertexShader: ptVS, fragmentShader: ptFS, transparent: true, depthWrite: false,
+  });
+}
+function makeCloud(n, size, opacity) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  geo.setAttribute('aCol', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const pts = new THREE.Points(geo, pointsMat(size, opacity));
+  pts.frustumCulled = false; pts.renderOrder = 2;
+  scene.add(pts);
+  return pts;
+}
+const NP = 320, NJ = 170, NB = 70;
+const cloudPipe = makeCloud(NP, 0.0075, 1);
+const cloudJet = makeCloud(NJ, 0.0085, 1);
+const cloudBub = makeCloud(NB, 0.006, 0.9);
+const parts = Array.from({ length: NP }, () => ({ s: Math.random() * LT, rf: Math.sqrt(Math.random()) * 0.88, th: Math.random() * Math.PI * 2 }));
+const jparts = Array.from({ length: NJ }, (_, i) => ({ u: i / NJ, rf: Math.sqrt(Math.random()) * 0.8, th: Math.random() * Math.PI * 2 }));
+const bparts = Array.from({ length: NB }, () => ({ s: sT + Math.random() * (SEG.t + 0.12), rf: Math.random() * 0.8, th: Math.random() * Math.PI * 2, life: Math.random() }));
+const C_SLOW = new THREE.Color('#1D4ED8'), C_MID = new THREE.Color('#22D3EE'), C_FAST = new THREE.Color('#F59E0B');
+const _c = new THREE.Color();
+function speedColor(u) {
+  u = clamp(u, 0, 1);
+  return u < 0.5 ? _c.copy(C_SLOW).lerp(C_MID, u * 2) : _c.copy(C_MID).lerp(C_FAST, (u - 0.5) * 2);
+}
+const Rat = (s) => {                        // radio interior interpolado (m)
+  const j = clamp(s / LT, 0, 1) * NG, j0 = Math.floor(j), j1 = Math.min(NG, j0 + 1);
+  return lerp(GD[j0], GD[j1], j - j0) / 2;
+};
+const Vat = (s) => { const j = clamp(s / LT, 0, 1) * NG, j0 = Math.floor(j), j1 = Math.min(NG, j0 + 1); return lerp(PV[j0], PV[j1], j - j0); };
+// Perfil radial de velocidad: uniforme (ideal), parabólico (laminar) o ley 1/7 (turbulento)
+function profileFactor(rf) {
+  if (!S.losses) return 1;
+  if (P.reg === 'lam') return 2 * (1 - rf * rf);
+  return Math.pow(Math.max(1 - rf, 0), 1 / 7) * 1.224;
+}
+function updatePipeParticles(dt) {
+  const pos = cloudPipe.geometry.attributes.position.array, col = cloudPipe.geometry.attributes.aCol.array;
+  const vref = Math.max(P.vmax, 1e-6) * (S.losses && P.reg === 'lam' ? 1.5 : 1);
+  for (let i = 0; i < NP; i++) {
+    const p = parts[i];
+    const u = Vat(p.s) * profileFactor(p.rf);
+    p.s += u * dt;
+    if (p.s >= LT) { p.s -= LT; if (p.s >= LT) p.s = Math.random() * LT * 0.05; p.rf = Math.sqrt(Math.random()) * 0.88; p.th = Math.random() * Math.PI * 2; }
+    const r = Rat(p.s) * p.rf;
+    pos[i * 3] = X0 + p.s; pos[i * 3 + 1] = Y_AX + r * Math.cos(p.th); pos[i * 3 + 2] = r * Math.sin(p.th);
+    const c = speedColor(u / vref);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  cloudPipe.geometry.attributes.position.needsUpdate = true;
+  cloudPipe.geometry.attributes.aCol.needsUpdate = true;
+}
+// Chorro: trayectoria exacta x = vs t, y = −g t²/2; la sección se adelgaza porque |v| crece (A·|v| = Q)
+const jet = { NS: 72, NR: 12 };
+function jetTEnd() { return Math.sqrt(2 * (Y_AX - tray.waterY) / G); }
+function jetPoint(t, out) { out.set(X_N + P.vs * t, Y_AX - 0.5 * G * t * t, 0); return out; }
+const jetRadius = (t) => (DN / 200) * Math.sqrt(Math.max(P.vs, 0.02) / Math.hypot(Math.max(P.vs, 0.02), G * t));
+{
+  const { NS, NR } = jet, nV = (NS + 1) * (NR + 1);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nV * 3), 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(nV * 3), 3));
+  const idx = [];
+  for (let i = 0; i < NS; i++) for (let j = 0; j < NR; j++) {
+    const a = i * (NR + 1) + j, b = a + NR + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  geo.setIndex(idx);
+  jet.mesh = transparentMesh(geo, M.fluid, 2);
+  jet.mesh.frustumCulled = false;
+  scene.add(jet.mesh);
+}
+const _p = new V3(), _t = new V3(), _n1 = new V3(), _n2 = new V3(0, 0, 1);
+function updateJetMesh() {
+  const { NS, NR } = jet, pos = jet.mesh.geometry.attributes.position.array, nor = jet.mesh.geometry.attributes.normal.array;
+  const T = jetTEnd();
+  let k = 0;
+  for (let i = 0; i <= NS; i++) {
+    const t = T * i / NS;
+    jetPoint(t, _p);
+    _t.set(P.vs, -G * t, 0).normalize();
+    if (_t.lengthSq() < 1e-9) _t.set(0, -1, 0);
+    _n1.set(-_t.y, _t.x, 0);
+    const r = jetRadius(t) * (i === 0 ? 1 : 0.97);
+    for (let j = 0; j <= NR; j++) {
+      const a = j / NR * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+      const nx = _n1.x * ca + _n2.x * sa, ny = _n1.y * ca + _n2.y * sa, nz = _n1.z * ca + _n2.z * sa;
+      pos[k] = _p.x + nx * r; pos[k + 1] = _p.y + ny * r; pos[k + 2] = _p.z + nz * r;
+      nor[k] = nx; nor[k + 1] = ny; nor[k + 2] = nz; k += 3;
+    }
+  }
+  jet.mesh.geometry.attributes.position.needsUpdate = true;
+  jet.mesh.geometry.attributes.normal.needsUpdate = true;
+}
+function updateJetParticles(dt) {
+  const pos = cloudJet.geometry.attributes.position.array, col = cloudJet.geometry.attributes.aCol.array;
+  const T = jetTEnd(), vref = Math.max(P.vmax, P.vImp, 1e-6);
+  for (let i = 0; i < NJ; i++) {
+    const p = jparts[i];
+    p.u += dt / T; if (p.u >= 1) { p.u -= Math.floor(p.u); p.rf = Math.sqrt(Math.random()) * 0.8; p.th = Math.random() * Math.PI * 2; }
+    const t = p.u * T;
+    jetPoint(t, _p);
+    _t.set(P.vs, -G * t, 0).normalize(); _n1.set(-_t.y, _t.x, 0);
+    const r = jetRadius(t) * p.rf, ca = Math.cos(p.th), sa = Math.sin(p.th);
+    pos[i * 3] = _p.x + _n1.x * r * ca; pos[i * 3 + 1] = _p.y + _n1.y * r * ca; pos[i * 3 + 2] = r * sa;
+    const c = speedColor(Math.hypot(P.vs, G * t) / vref);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  cloudJet.geometry.attributes.position.needsUpdate = true;
+  cloudJet.geometry.attributes.aCol.needsUpdate = true;
+}
+// Burbujas de vapor: nacen en la zona de mínima presión y colapsan al recuperar presión en el difusor
+let cavA = 0;
+function updateBubbles(dt) {
+  cloudBub.visible = cavA > 0.02;
+  cloudBub.material.uniforms.uOpacity.value = 0.95 * cavA;
+  if (!cloudBub.visible) return;
+  const pos = cloudBub.geometry.attributes.position.array, col = cloudBub.geometry.attributes.aCol.array;
+  const s0 = clamp(P.sMin - 0.02, 0, LT), s1 = Math.min(LT, s0 + 0.16);
+  for (let i = 0; i < NB; i++) {
+    const b = bparts[i];
+    b.s += Vat(b.s) * dt * 0.8; b.life -= dt * 2.2;
+    if (b.s > s1 || b.life <= 0 || b.s < s0 - 0.01) { b.s = s0 + Math.random() * 0.03; b.life = 0.6 + Math.random() * 0.6; b.rf = Math.random() * 0.85; b.th = Math.random() * Math.PI * 2; }
+    const r = Rat(b.s) * b.rf;
+    pos[i * 3] = X0 + b.s; pos[i * 3 + 1] = Y_AX + r * Math.cos(b.th); pos[i * 3 + 2] = r * Math.sin(b.th);
+    const w = clamp(b.life, 0, 1);
+    col[i * 3] = 0.85 + 0.15 * w; col[i * 3 + 1] = 0.9 + 0.1 * w; col[i * 3 + 2] = 1;
+  }
+  cloudBub.geometry.attributes.position.needsUpdate = true;
+  cloudBub.geometry.attributes.aCol.needsUpdate = true;
+}
+// Líneas de corriente en el plano medio (z = 0), prolongadas por el chorro
+const streamGroup = new THREE.Group(); scene.add(streamGroup);
+const streamMat = new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.55, depthWrite: false });
+const STREAM_RF = [-0.8, -0.45, 0, 0.45, 0.8];
+const streamLines = STREAM_RF.map(() => {
+  const n = 121 + 41;
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const l = new THREE.Line(geo, streamMat); l.frustumCulled = false; l.renderOrder = 4; streamGroup.add(l); return l;
+});
+function buildStreamlines() {
+  if (!P.vs && P.vs !== 0) return;
+  const T = jetTEnd();
+  STREAM_RF.forEach((rf, k) => {
+    const a = streamLines[k].geometry.attributes.position.array;
+    let n = 0;
+    for (let i = 0; i <= 120; i++) { const s = LT * i / 120; a[n++] = X0 + s; a[n++] = Y_AX + rf * Rat(s); a[n++] = 0; }
+    for (let i = 1; i <= 41; i++) {
+      const t = T * i / 41; jetPoint(t, _p); _t.set(P.vs, -G * t, 0).normalize(); _n1.set(-_t.y, _t.x, 0);
+      const r = rf * jetRadius(t); a[n++] = _p.x + _n1.x * r; a[n++] = _p.y + _n1.y * r; a[n++] = 0;
+    }
+    streamLines[k].geometry.attributes.position.needsUpdate = true;
+  });
+}
+// Línea de energía (LE) y línea piezométrica (LP)
+const NE = 121;
+function dashedLine(color, dash, gap) {
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array((NE + 2) * 3), 3));
+  const l = new THREE.Line(geo, new THREE.LineDashedMaterial({ color, dashSize: dash, gapSize: gap, transparent: true, opacity: 0.95, depthWrite: false }));
+  l.frustumCulled = false; l.renderOrder = 5; scene.add(l); return l;
+}
+const egl = dashedLine(0xf59e0b, 0.05, 0.03);
+const hgl = dashedLine(0xa78bfa, 0.025, 0.015);
+function updateEnergyLines() {
+  egl.visible = hgl.visible = S.energy;
+  if (!S.energy) return;
+  for (const [line, arr] of [[egl, PE], [hgl, PH]]) {
+    const a = line.geometry.attributes.position.array;
+    let n = 0;
+    a[n++] = -R_T * 0.6; a[n++] = Y_AX + S.h; a[n++] = 0.0;      // superficie libre del tanque
+    for (let i = 0; i <= NE; i++) { const j = Math.round(i / NE * NG); a[n++] = X0 + GS[j]; a[n++] = Math.max(Y_AX + arr[j], 0.004); a[n++] = 0; }   // bajo el suelo se recorta
+    line.geometry.attributes.position.needsUpdate = true;
+    line.computeLineDistances();
+  }
+}
+// Vectores de velocidad
+function arrow(color) {
+  const a = new THREE.ArrowHelper(new V3(1, 0, 0), new V3(), 0.1, color, 0.02, 0.012);
+  for (const m of [a.line.material, a.cone.material]) { m.depthTest = false; m.transparent = true; }
+  a.line.renderOrder = a.cone.renderOrder = 8;
+  scene.add(a); return a;
+}
+const arr = { v1: arrow(0x22d3ee), v2: arrow(0xf59e0b), v3: arrow(0x22d3ee), vs: arrow(0x22d3ee), vi: arrow(0x22d3ee) };
+const DIR_X = new V3(1, 0, 0);
+function setArrow(a, origin, dir, len) { a.position.copy(origin); a.setDirection(dir); a.setLength(Math.max(len, 0.012), Math.min(0.04, len * 0.35), Math.min(0.022, len * 0.2)); }
+
+/* ---------- etiquetas de texto en la escena (tamaño constante en pantalla) ---------- */
+const labels = [];
+function makeLabel(px = 13) {
+  const [c, g] = makeCanvas(512, 96);
+  const tex = canvasTex(c);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+  sp.center.set(0, 0.5); sp.renderOrder = 20;
+  sp.userData = { c, g, tex, text: '', px };
+  scene.add(sp); labels.push(sp);
+  return sp;
+}
+function setLabel(sp, text, color = '#E5E7EB', border = '#2A303C') {
+  const u = sp.userData;
+  if (u.text === text + color) return;
+  u.text = text + color;
+  const g = u.g;
+  g.clearRect(0, 0, 512, 96);
+  g.font = `500 44px ${MONO}`;
+  const w = Math.min(500, g.measureText(text).width + 30);
+  g.fillStyle = 'rgba(12,14,18,0.88)'; g.fillRect(2, 10, w, 76);
+  g.strokeStyle = border; g.lineWidth = 3; g.strokeRect(2, 10, w, 76);
+  g.fillStyle = color; g.textBaseline = 'middle'; g.fillText(text, 17, 50);
+  u.tex.needsUpdate = true;
+}
+const _lp = new V3();
+function scaleLabels() {
+  const cssH = CH;
+  for (const sp of labels) {
+    if (!sp.visible) continue;
+    let wpp;
+    if (activeCam === ortho) wpp = (ortho.top - ortho.bottom) / ortho.zoom / cssH;
+    else { sp.getWorldPosition(_lp); wpp = 2 * _lp.distanceTo(persp.position) * tanHalf() / cssH; }
+    const h = sp.userData.px * 96 / 56 * wpp;
+    sp.scale.set(h * 512 / 96, h, 1);
+  }
+}
+const lbl = { h: makeLabel(), x: makeLabel(), p1: makeLabel(12), p2: makeLabel(12), p3: makeLabel(12), v1: makeLabel(11), v2: makeLabel(11), vs: makeLabel(11), le: makeLabel(10), lp: makeLabel(10) };
+
+/* =====================================================================
+   9. CÁMARA: PRESETS Y TRANSICIONES
+   ===================================================================== */
+let camMode = 'iso', camTween = null;
+const tanHalf = () => Math.tan(THREE.MathUtils.degToRad(persp.fov / 2));
+const SCN = { x0: -0.78, x1: X_N + TRAY_LEN + 0.12, y0: -0.02, y1: TANK_TOP + 0.3 };
+const ovl = { top: 70, bottom: 0 };
+function measureOverlays() {
+  const h = canvas.clientHeight || 1, cr = canvas.getBoundingClientRect();
+  ovl.top = clamp($('#status').getBoundingClientRect().bottom - cr.top + 8, 0, h * 0.22);
+}
+function frameFit() {
+  const h = CH;
+  return { avail: clamp((h - ovl.top - ovl.bottom) / h, 0.5, 1), off: (ovl.bottom - ovl.top) / 2 / h };
+}
+function perspFrame(center, dirv, spanW, spanH) {
+  const th = tanHalf(), { avail, off } = frameFit();
+  const dir = dirv.clone().normalize();
+  const d = Math.max(spanW / (2 * th * aspect), spanH / (2 * th * avail));
+  const up = new V3(0, 1, 0).addScaledVector(dir, -dir.y).normalize();
+  const target = center.clone().addScaledVector(up, -off * 2 * d * th);
+  return { target, pos: target.clone().addScaledVector(dir, d) };
+}
+function frameFor(mode) {
+  const th = tanHalf();
+  if (mode === 'front') {
+    const { avail, off } = frameFit();
+    const halfW = Math.max((SCN.x1 - SCN.x0) / 2 * 1.03, (SCN.y1 - SCN.y0) / 2 * 1.04 / avail * aspect);
+    const halfH = halfW / aspect;
+    const target = new V3((SCN.x0 + SCN.x1) / 2, (SCN.y0 + SCN.y1) / 2 - off * 2 * halfH, 0);
+    return { ortho: true, halfW, target, pos: new V3(target.x, target.y, halfW / (th * aspect)) };
+  }
+  if (mode === 'throat') return perspFrame(new V3(X0 + sT + 0.02, Y_AX + 0.1, 0), new V3(0.32, 0.2, 1), 0.82, 0.52);
+  return perspFrame(new V3(1.95, 1.55, 0.05), new V3(0.5, 0.33, 1), SCN.x1 - SCN.x0 + 0.35, SCN.y1 - SCN.y0 + 0.25);
+}
+function setCamMode(mode) {
+  camMode = mode;
+  const visible = mode === 'front-free' ? 'front' : mode;
+  $$('.cam-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cam === visible)));
+}
+function setActiveCam(c) { activeCam = c; renderPass.camera = c; $('#hint-2d').classList.toggle('show', c === ortho); }
+function applyOrthoFrustum() {
+  const hw = orthoHalfW, hh = hw / aspect;
+  ortho.left = -hw; ortho.right = hw; ortho.top = hh; ortho.bottom = -hh; ortho.updateProjectionMatrix();
+}
+function flyTo(mode, dur = 1.1) {
+  setCamMode(mode);
+  const F = frameFor(mode);
+  if (activeCam === ortho) {
+    const dir = new V3().subVectors(ortho.position, ctlO.target).normalize();
+    const d = (orthoHalfW / ortho.zoom) / (tanHalf() * aspect);
+    ctlP.target.copy(ctlO.target);
+    persp.position.copy(ctlO.target).addScaledVector(dir, d);
+    persp.lookAt(ctlP.target);
+    ctlO.enabled = false; setActiveCam(persp);
+  }
+  const s0 = new THREE.Spherical().setFromVector3(new V3().subVectors(persp.position, ctlP.target));
+  const s1 = new THREE.Spherical().setFromVector3(new V3().subVectors(F.pos, F.target));
+  const dth = s1.theta - s0.theta;
+  if (dth > Math.PI) s1.theta -= 2 * Math.PI; else if (dth < -Math.PI) s1.theta += 2 * Math.PI;
+  camTween = { t: 0, dur: REDUCED ? 0.001 : dur, t0: ctlP.target.clone(), t1: F.target, s0, s1, F };
+  ctlP.enabled = false;
+}
+const _sph = new THREE.Spherical();
+function stepCamTween(dt) {
+  const tw = camTween;
+  tw.t = Math.min(1, tw.t + dt / tw.dur);
+  const k = easeIO(tw.t);
+  _sph.set(lerp(tw.s0.radius, tw.s1.radius, k), lerp(tw.s0.phi, tw.s1.phi, k), lerp(tw.s0.theta, tw.s1.theta, k));
+  ctlP.target.lerpVectors(tw.t0, tw.t1, k);
+  persp.position.setFromSpherical(_sph).add(ctlP.target);
+  persp.lookAt(ctlP.target);
+  if (tw.t >= 1) {
+    camTween = null;
+    if (tw.F.ortho) {
+      orthoHalfW = tw.F.halfW; ortho.zoom = 1;
+      ortho.position.copy(tw.F.pos); ctlO.target.copy(tw.F.target); ortho.lookAt(tw.F.target);
+      applyOrthoFrustum(); setActiveCam(ortho); ctlO.enabled = true; ctlO.update();
+    } else { ctlP.enabled = true; ctlP.update(); }
+  }
+}
+function followFrame(dt) {           // mantiene el encuadre de los presets al cambiar el tamaño del visor
+  if (camTween) return;
+  const k = 1 - Math.exp(-dt * 3.2);
+  if ((camMode === 'iso' || camMode === 'throat') && activeCam === persp) {
+    const F = frameFor(camMode);
+    ctlP.target.lerp(F.target, k); persp.position.lerp(F.pos, k);
+  } else if (camMode === 'front' && activeCam === ortho) {
+    const F = frameFor('front');
+    ctlO.target.lerp(F.target, k); ortho.position.lerp(F.pos, k);
+    orthoHalfW = lerp(orthoHalfW, F.halfW, k); ortho.zoom = lerp(ortho.zoom, 1, k);
+    applyOrthoFrustum();
+  }
+}
+ctlP.addEventListener('start', () => { if (!camTween) setCamMode('free'); });
+ctlO.addEventListener('start', () => { if (!camTween) setCamMode('front-free'); });
+
+function resize() {
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  if (d !== DPR) { DPR = d; renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR()); }
+  const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  aspect = w / h; CH = h;
+  persp.aspect = aspect; persp.updateProjectionMatrix();
+  applyOrthoFrustum();
+  measureOverlays();
+}
+let resizeQueued = false;
+const stageRO = new ResizeObserver(() => {
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => { resizeQueued = false; resize(); sizeCharts(); dirty.charts = true; });
+});
+stageRO.observe(stage); stageRO.observe(canvas);
+
+/* =====================================================================
+   10. INTERFAZ: CONTROLES, PANELES Y GRÁFICAS 2D
+   ===================================================================== */
+const CTRL = { h: { dec: [3, 2] }, D1: { dec: [2, 1] }, D2: { dec: [2, 1] } };
+const dirty = { panels: true, charts: true, curve: true };
+
+function limOf(key) { return key === 'D2' ? [LIM.D2[0], S.D1] : LIM[key]; }
+function setParam(key, v, src = 'ui') {
+  if (!Number.isFinite(v)) return;
+  const [a, b] = limOf(key);
+  S[key] = clamp(v, a, b);
+  if (key === 'D1' && S.D2 > S.D1) S.D2 = S.D1;
+  if (key === 'h') { S.h0 = S.h; drained = false; hist = []; histAcc = 0; }
+  onParams(src);
+}
+function syncInputs() {
+  for (const key of Object.keys(CTRL)) {
+    const rng = $('#rng-' + key), num = $('#num-' + key), [a, b] = limOf(key);
+    if (key === 'D2') { rng.max = String(S.D1); num.max = String(S.D1); }
+    rng.value = S[key];
+    rng.style.setProperty('--p', (clamp((S[key] - a) / Math.max(b - a, 1e-9), 0, 1) * 100).toFixed(2) + '%');
+    if (document.activeElement !== num) num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]);
+  }
+  $('#d2-lock').classList.toggle('on', S.D2 >= S.D1 - 1e-9);
+}
+function bindControls() {
+  for (const key of Object.keys(CTRL)) {
+    const rng = $('#rng-' + key), num = $('#num-' + key);
+    rng.addEventListener('input', () => setParam(key, parseFloat(rng.value)));
+    num.addEventListener('input', () => {
+      const v = parseFloat(num.value), [a, b] = limOf(key);
+      if (Number.isFinite(v) && v >= a && v <= b) setParam(key, v);
+    });
+    num.addEventListener('change', () => {
+      const v = parseFloat(num.value);
+      setParam(key, Number.isFinite(v) ? v : S[key]);
+      num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]);
+    });
+    num.addEventListener('blur', () => { num.value = trimTo(S[key], CTRL[key].dec[0], CTRL[key].dec[1]); });
+    num.addEventListener('keydown', (e) => { if (e.key === 'Enter') num.blur(); });
+  }
+  const list = $('#fl-list');
+  for (const fl of FLUIDS) {
+    const b = document.createElement('button');
+    b.className = 'mat'; b.dataset.fl = fl.id; b.setAttribute('aria-pressed', 'false'); b.style.setProperty('--fc', fl.css);
+    b.innerHTML = `<span class="nm"><i></i><b>${fl.name}</b></span><span class="r">${fl.rho.toLocaleString('es')} kg/m³</span>`;
+    b.title = `${fl.name}: ρ = ${fl.rho} kg/m³, μ = ${fl.mu} Pa·s, presión de vapor ${fl.pv} Pa (20 °C)`;
+    b.addEventListener('click', () => setFluid(fl.id));
+    list.appendChild(b);
+  }
+  $$('#mode-seg button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  $$('#loss-seg button').forEach((b) => b.addEventListener('click', () => setLosses(b.dataset.loss === '1')));
+  $('#btn-fill').addEventListener('click', refill);
+  $$('.cam-btn').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
+  $$('#speed-seg button').forEach((b) => b.addEventListener('click', () => setSpeed(b.dataset.speed)));
+  $('#btn-pause').addEventListener('click', togglePause);
+  $$('.tog').forEach((b) => b.addEventListener('click', () => toggleLayer(b.dataset.tog)));
+  $$('[data-dis]').forEach((b) => b.addEventListener('click', () => {
+    S.dis = b.dataset.dis;
+    $$('[data-dis]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    dirty.charts = true;
+  }));
+  // la curva de descarga fija el nivel h al hacer clic o arrastrar
+  const dc = $('#dis-cv');
+  let dragging = false;
+  const pick = (e) => {
+    const r = dc.getBoundingClientRect(), h = disXtoH(e.clientX - r.left);
+    if (Number.isFinite(h)) setParam('h', Math.round(h * 200) / 200);
+  };
+  dc.addEventListener('pointerdown', (e) => { dragging = true; try { dc.setPointerCapture(e.pointerId); } catch (err) { /* puntero liberado */ } pick(e); });
+  dc.addEventListener('pointermove', (e) => { if (dragging) pick(e); });
+  dc.addEventListener('pointerup', () => { dragging = false; });
+  dc.addEventListener('pointercancel', () => { dragging = false; });
+  window.addEventListener('keydown', onKey);
+}
+function bindChrome() {
+  const btn = $('#fl-btn'), list = $('#fl-list');
+  const openList = (v) => { list.hidden = !v; btn.setAttribute('aria-expanded', String(v)); };
+  btn.addEventListener('click', (e) => { e.stopPropagation(); openList(list.hidden); });
+  list.addEventListener('click', (e) => { if (e.target.closest('.mat')) { openList(false); btn.focus(); } });
+  document.addEventListener('click', (e) => { if (!list.hidden && !e.target.closest('.pick')) openList(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !list.hidden) { e.preventDefault(); openList(false); btn.focus(); } });
+  const tabs = $$('[role="tab"]');
+  const select = (tab) => tabs.forEach((x) => {
+    const on = x === tab; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+    $('#' + x.getAttribute('aria-controls')).hidden = !on;
+  });
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      select(next); next.focus();
+    });
+  });
+  const dlg = $('#help-dlg');
+  $('#btn-help').addEventListener('click', () => dlg.showModal());
+  $('#help-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+function setFluid(id) {
+  if (!FLUIDS.some((f) => f.id === id)) return;
+  S.fluid = id; applyFluidLook(); hist = []; onParams('ui');
+}
+function setMode(m) {
+  if (m !== 'const' && m !== 'drain') return;
+  S.mode = m;
+  if (m === 'drain') { drained = S.h <= P.hMin + 1e-9; hist = []; histAcc = 0; }
+  $$('#mode-seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  onParams('ui');
+}
+function setLosses(on) {
+  S.losses = !!on;
+  $$('#loss-seg button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.loss === '1') === S.losses)));
+  hist = []; onParams('ui');
+}
+function refill() { setParam('h', S.h0 > P.hMin + 0.01 ? S.h0 : 1.0); }
+function setSpeed(v) {
+  const n = parseFloat(v);
+  if (![1, 0.25, 0.1].includes(n)) return;
+  S.speed = n;
+  $$('#speed-seg button').forEach((b) => b.setAttribute('aria-pressed', String(parseFloat(b.dataset.speed) === n)));
+}
+function togglePause() {
+  S.paused = !S.paused;
+  $('#btn-pause').setAttribute('aria-pressed', String(S.paused));
+  $('#pause-txt').textContent = S.paused ? 'Reanudar' : 'Pausar';
+  $('#ico-pause').innerHTML = S.paused ? '<path d="M3 1.5v9l7.5-4.5z"/>' : '<rect x="2" y="1.5" width="3" height="9" rx=".5"/><rect x="7" y="1.5" width="3" height="9" rx=".5"/>';
+  $('#tread').classList.toggle('frozen', S.paused);
+}
+function toggleLayer(k) {
+  S[k] = !S[k];
+  $$(`.tog[data-tog="${k}"]`).forEach((b) => b.setAttribute('aria-pressed', String(S[k])));
+}
+function onKey(e) {
+  if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
+  const t = e.target, tag = t.tagName;
+  if (t.getAttribute && t.getAttribute('role') === 'tab') return;
+  if (tag === 'INPUT' && t.type !== 'range') return;
+  if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (t.type === 'range' && e.key.startsWith('Arrow')) return;
+  if (tag === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  switch (e.key) {
+    case ' ': e.preventDefault(); togglePause(); break;
+    case '1': flyTo('front'); break;
+    case '2': flyTo('iso'); break;
+    case '3': flyTo('throat'); break;
+    case 'ArrowRight': e.preventDefault(); setParam('h', S.h + (e.shiftKey ? 0.1 : 0.01)); break;
+    case 'ArrowLeft': e.preventDefault(); setParam('h', S.h - (e.shiftKey ? 0.1 : 0.01)); break;
+    case 'ArrowUp': e.preventDefault(); setParam('D2', S.D2 + (e.shiftKey ? 0.5 : 0.1)); break;
+    case 'ArrowDown': e.preventDefault(); setParam('D2', S.D2 - (e.shiftKey ? 0.5 : 0.1)); break;
+    case 'c': case 'C': setMode(S.mode === 'const' ? 'drain' : 'const'); break;
+    case 'l': case 'L': setLosses(!S.losses); break;
+    case 'v': case 'V': toggleLayer('vectors'); break;
+    case 's': case 'S': toggleLayer('streams'); break;
+    case 'e': case 'E': toggleLayer('energy'); break;
+    default: break;
+  }
+}
+
+/* ---------- paneles numéricos ---------- */
+const REG_TXT = { lam: 'laminar', tra: 'transición', tur: 'turbulento' };
+const set = (id, txt) => { const el = document.getElementById(id); if (el.textContent !== txt) el.textContent = txt; };
+function buildPzRows() {
+  const body = $('#pz-body');
+  for (let k = 0; k < 3; k++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="tag">${k + 1}</span></td><td class="dd"></td><td class="vv"></td><td class="hp"></td><td class="pp"></td>`;
+    body.appendChild(tr);
+  }
+}
+function updatePanels() {
+  const fl = P.fl;
+  set('o-pb', P.Pbottom.toFixed(2));
+  set('o-beta', P.beta.toFixed(3));
+  set('o-rho', fl.rho.toLocaleString('es'));
+  set('o-mu', fsig(fl.mu, 3));
+  $('#fl-sw').style.setProperty('--fc', fl.css); set('fl-name', fl.name);
+  $$('.mat').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.fl === fl.id)));
+  // resultados
+  set('r-QL', fx(P.Q * 1000, 3)); set('r-Qm', fsig(P.Q, 4));
+  set('r-v1', fx(P.v1, 3)); set('r-v2', fx(P.v2, 3)); set('r-vs', fx(P.vs, 3));
+  set('r-P1', fx(P.P1, 2)); set('r-P2', fx(P.P2, 2)); set('r-dP', fx(P.dP, 2));
+  $('#r-P2').classList.toggle('neg', P.P2 < 0);
+  set('r-Re', P.Re1 >= 1e5 ? Math.round(P.Re1).toLocaleString('es') : fsig(P.Re1, 4));
+  const chip = $('#r-reg'); chip.dataset.r = P.reg; set('r-reg', REG_TXT[P.reg]);
+  set('r-Cv', P.Cv.toFixed(3)); set('r-x', fx(P.x, 3));
+  // piezómetros
+  $$('#pz-body tr').forEach((tr, k) => {
+    const p = P.pz[k];
+    tr.querySelector('.dd').textContent = p.D.toFixed(2);
+    tr.querySelector('.vv').textContent = fx(p.v, 3);
+    tr.querySelector('.hp').textContent = fx(p.hp, 3);
+    tr.querySelector('.pp').textContent = fx(p.P, 2);
+    tr.classList.toggle('neg', p.hp < 0);
+  });
+  const dh = P.pz[0].hp - P.pz[1].hp;
+  set('pz-dh', fx(dh, 3)); set('pz-dP', fx(fl.rho * G * dh / 1000, 2));
+  set('pz-Qv', fx(P.Qventuri * 1000, 3));
+  set('pz-rc', S.losses ? `${fx((P.pz[2].hp / Math.max(P.pz[0].hp, 1e-9)) * 100, 1)} % · pérdida ${fx(P.pz[0].hp - P.pz[2].hp, 3)} m` : '100 % (ideal)');
+  // telemetría
+  set('t-vol', fx(P.vol, 1)); set('t-dhdt', fx(P.dhdt * 1000, 2));
+  set('t-tdrain', fx(P.tDrain, 1));
+  set('t-Re2', P.Re2 >= 1e5 ? Math.round(P.Re2).toLocaleString('es') : fsig(P.Re2, 4));
+  set('t-f', S.losses ? P.f1.toFixed(4) : '— (ideal)');
+  set('t-hL', fx(P.hL, 3)); set('t-Hn', H_N.toFixed(3));
+  set('t-tof', fx(P.tof, 3)); set('t-vi', fx(P.vImp, 3)); set('t-ang', fx(P.angImp, 1));
+  // diagnóstico
+  const dg = $('#diag'); dg.dataset.state = P.cav;
+  set('d-state', P.cav === 'cav' ? 'Cavitación' : P.cav === 'near' ? 'Riesgo de cavitación' : 'Sin cavitación');
+  set('d-pabs', fx(Math.max(P.PabsMin, 0), 2));
+  set('d-pvv', fsig(P.pvk, 3));
+  const sc = PATM / 1000 * 1.6;
+  $('#d-meter').style.width = (clamp(P.PabsMin / sc, 0, 1) * 100).toFixed(1) + '%';
+  $('#d-pv').style.left = (clamp(P.pvk / sc, 0, 1) * 100).toFixed(2) + '%';
+  let msg;
+  if (P.cav === 'cav') msg = `La presión absoluta en la garganta cae bajo la de vapor (${fsig(P.pvk, 3)} kPa): se forman burbujas y el modelo ideal deja de valer.`;
+  else if (P.cav === 'near') msg = `Margen de ${fx(P.margin, 1)} kPa sobre la presión de vapor.`;
+  else if (P.subatm) msg = 'Presión sub-atmosférica en la garganta: el piezómetro 2 aspiraría aire.';
+  else msg = `Margen de ${fx(P.margin, 1)} kPa sobre la presión de vapor.`;
+  set('d-msg', msg);
+  set('btn-fill-sub', `h₀ = ${S.h0.toFixed(2)} m`);
+  $('#btn-fill').disabled = Math.abs(S.h - S.h0) < 1e-4;
+  // HUD
+  const st = $('#status');
+  const state = P.cav === 'cav' ? 'cav' : S.mode === 'drain' ? (drained ? 'empty' : 'drain') : 'ok';
+  st.dataset.state = state;
+  set('status-txt', state === 'cav' ? 'Cavitación en la garganta' : state === 'drain' ? 'Vaciado libre' : state === 'empty' ? 'Nivel mínimo alcanzado' : 'Flujo estacionario');
+  set('status-q', `Q = ${fx(P.Q * 1000, 3)} L/s`);
+  $('#eq-live').innerHTML = `<i>v</i><sub>s</sub> = <b>${fx(P.vs, 2)}</b> m/s · <i>v</i><sub>2</sub> = <b>${fx(P.v2, 2)}</b> m/s · <i>x</i> = <b>${fx(P.x, 3)}</b> m`;
+  set('vbar-max', fx(P.vmax, 2));
+  set('h-read', S.h.toFixed(3));
+}
+
+/* ---------- gráficas 2D ---------- */
+const prof = { c: $('#prof-cv'), w: 0, h: 0 }; prof.g = prof.c.getContext('2d');
+const dis = { c: $('#dis-cv'), w: 0, h: 0, pl: 46, pr: 12 }; dis.g = dis.c.getContext('2d');
+function fitCanvas(o) {
+  const r = o.c.getBoundingClientRect();
+  o.w = r.width; o.h = r.height;
+  const W = Math.max(1, Math.round(r.width * DPR)), H = Math.max(1, Math.round(r.height * DPR));
+  if (o.c.width !== W || o.c.height !== H) { o.c.width = W; o.c.height = H; }
+}
+function sizeCharts() { fitCanvas(prof); fitCanvas(dis); }
+for (const o of [prof, dis]) new ResizeObserver(() => requestAnimationFrame(() => { fitCanvas(o); dirty.charts = true; })).observe(o.c);
+const UI = {
+  grid: 'rgba(255,255,255,0.04)', gridMajor: 'rgba(255,255,255,0.08)', frame: '#2A303C', tick: '#3A4150',
+  label: '#6E7681', text: '#8B949E', v: '#0EA5E9', p: '#A78BFA', ok: '#10B981', accent: '#F59E0B', bad: '#EF4444', ideal: '#6E7681',
+  font: (px, w = 400) => `${w} ${px}px "JetBrains Mono", ui-monospace, Consolas, monospace`,
+};
+const crisp = (v) => Math.round(v) + 0.5;
+function axisTicks(lo, hi, n) {
+  const st = niceStep(hi - lo, n), out = [];
+  for (let v = Math.ceil(lo / st - 1e-9) * st; v <= hi + 1e-9; v += st) out.push(+v.toFixed(10));
+  return { st, ticks: out };
+}
+const tickTxt = (v, st) => { const d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)); return v.toFixed(Math.min(d, 3)).replace('-', '−'); };
+
+function drawProfile() {
+  const { g, w: W, h: H } = prof;
+  if (W < 10) return;
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const pl = 44, pr = 50, pt = 12, schem = 18, pb = 20 + schem, pw = W - pl - pr, ph = H - pt - pb;
+  if (pw < 40 || ph < 30) return;
+  const X = (s) => pl + s / LT * pw;
+  // ejes: velocidad (izquierda) y presión manométrica (derecha)
+  const vt = axisTicks(0, Math.max(P.vmax * 1.12, 0.05), 4), vTop = vt.ticks[vt.ticks.length - 1] < P.vmax * 1.05 ? vt.ticks[vt.ticks.length - 1] + vt.st : vt.ticks[vt.ticks.length - 1];
+  let pMin = 0, pMax = 0;
+  for (let i = 0; i <= NG; i++) { if (PK[i] < pMin) pMin = PK[i]; if (PK[i] > pMax) pMax = PK[i]; }
+  const pvg = (P.fl.pv - PATM) / 1000;
+  if (P.cav !== 'ok') pMin = Math.min(pMin, pvg);
+  const pad = (pMax - pMin) * 0.08 || 0.5;
+  const pt0 = axisTicks(pMin - pad, pMax + pad, 4);
+  const pLo = Math.min(pt0.ticks[0], pMin - pad), pHi = Math.max(pt0.ticks[pt0.ticks.length - 1], pMax + pad);
+  const Yv = (v) => pt + ph - v / vTop * ph, Yp = (p) => pt + ph - (p - pLo) / (pHi - pLo) * ph;
+  g.lineWidth = 1;
+  g.strokeStyle = UI.grid; g.beginPath();
+  for (const v of vt.ticks) { const y = crisp(Yv(v)); g.moveTo(pl, y); g.lineTo(pl + pw, y); }
+  for (let s = 0.1; s < LT; s += 0.1) { const x = crisp(X(s)); g.moveTo(x, pt); g.lineTo(x, pt + ph); }
+  g.stroke();
+  // secciones características
+  g.fillStyle = 'rgba(255,255,255,0.025)';
+  g.fillRect(X(sC), pt, X(sB) - X(sC), ph);
+  g.strokeStyle = UI.frame; g.strokeRect(crisp(pl), crisp(pt), Math.round(pw), Math.round(ph));
+  // tomas piezométricas
+  g.setLineDash([3, 3]); g.strokeStyle = UI.tick; g.beginPath();
+  for (const s of S_PZ) { const x = crisp(X(s)); g.moveTo(x, pt); g.lineTo(x, pt + ph); }
+  g.stroke(); g.setLineDash([]);
+  g.fillStyle = UI.text; g.font = UI.font(9.5, 500); g.textAlign = 'center'; g.textBaseline = 'top';
+  S_PZ.forEach((s, k) => g.fillText(String(k + 1), X(s) + 7, pt + 3));
+  // cero manométrico y presión de vapor
+  if (0 >= pLo && 0 <= pHi) { g.strokeStyle = 'rgba(167,139,250,.35)'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(pl, crisp(Yp(0))); g.lineTo(pl + pw, crisp(Yp(0))); g.stroke(); g.setLineDash([]); }
+  if (pvg >= pLo && pvg <= pHi) {
+    g.strokeStyle = UI.bad; g.setLineDash([5, 3]); g.beginPath(); g.moveTo(pl, crisp(Yp(pvg))); g.lineTo(pl + pw, crisp(Yp(pvg))); g.stroke(); g.setLineDash([]);
+    g.fillStyle = UI.bad; g.textAlign = 'left'; g.textBaseline = 'bottom'; g.font = UI.font(9.5, 500); g.fillText('Pv', pl + 4, Yp(pvg) - 2);
+  }
+  // curvas
+  const curve = (arr, Y, color) => {
+    g.beginPath();
+    for (let i = 0; i <= NG; i++) g.lineTo(X(GS[i]), Y(arr[i]));
+    g.strokeStyle = color; g.lineWidth = 1.6; g.lineJoin = 'round'; g.stroke();
+  };
+  curve(PK, Yp, UI.p);
+  curve(PV, Yv, UI.v);
+  // puntos de lectura
+  for (const p of P.pz) {
+    g.fillStyle = UI.p; g.beginPath(); g.arc(X(GS[p.i]), Yp(p.P), 2.6, 0, Math.PI * 2); g.fill();
+    g.fillStyle = UI.v; g.beginPath(); g.arc(X(GS[p.i]), Yv(p.v), 2.6, 0, Math.PI * 2); g.fill();
+  }
+  // etiquetas de ejes
+  g.font = UI.font(9.5); g.fillStyle = UI.v; g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (const v of vt.ticks) g.fillText(tickTxt(v, vt.st), pl - 5, Yv(v));
+  g.fillStyle = UI.p; g.textAlign = 'left';
+  for (const p of pt0.ticks) if (p >= pLo - 1e-9 && p <= pHi + 1e-9) g.fillText(tickTxt(p, pt0.st), pl + pw + 5, Yp(p));
+  g.font = UI.font(9, 500);
+  g.fillStyle = UI.v; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText('m/s', 4, pt - 2);
+  g.fillStyle = UI.p; g.textAlign = 'right'; g.fillText('kPa', W - 4, pt - 2);
+  // esquema de la tubería bajo el eje
+  const yc = pt + ph + 4 + schem / 2, kD = (schem / 2 - 1) / 12;
+  g.beginPath();
+  for (let i = 0; i <= NG; i++) g.lineTo(X(GS[i]), yc - GD[i] * 100 * kD);
+  for (let i = NG; i >= 0; i--) g.lineTo(X(GS[i]), yc + GD[i] * 100 * kD);
+  g.closePath(); g.fillStyle = 'rgba(14,165,233,.16)'; g.fill(); g.strokeStyle = 'rgba(139,148,158,.6)'; g.lineWidth = 1; g.stroke();
+  g.fillStyle = UI.label; g.font = UI.font(9.5); g.textBaseline = 'top';
+  for (let s = 0; s <= LT + 1e-6; s += 0.25) { g.textAlign = s === 0 ? 'left' : s > LT - 0.1 ? 'right' : 'center'; g.fillText(s.toFixed(2), X(s), H - 13); }
+  g.textAlign = 'right'; g.fillText('x (m)', pl - 5, H - 13);
+}
+
+let curveCache = { key: '', pts: null, ideal: null };
+const NH = 64;
+function dischargeCurve() {
+  const key = [S.D1, S.D2, S.fluid, S.losses].join('|');
+  if (curveCache.key === key) return curveCache;
+  const pts = [], ideal = [];
+  for (let i = 0; i <= NH; i++) {
+    const h = LIM.h[1] * i / NH;
+    pts.push(qAt(h));
+    if (S.losses) ideal.push(qAt(h, false));
+  }
+  curveCache = { key, pts, ideal: S.losses ? ideal : null };
+  return curveCache;
+}
+function disXtoH(x) {
+  const pw = dis.w - dis.pl - dis.pr;
+  return clamp((x - dis.pl) / pw * LIM.h[1], LIM.h[0], LIM.h[1]);
+}
+function drawDischarge() {
+  const { g, w: W, h: H, pl, pr } = dis;
+  if (W < 10) return;
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const pt = 12, pb = 22, pw = W - pl - pr, ph = H - pt - pb;
+  if (pw < 40 || ph < 30) return;
+  const cc = dischargeCurve(), isQ = S.dis === 'Q';
+  const val = (o) => (isQ ? o.Q * 1000 : o.x);
+  const yMaxRaw = Math.max(...cc.pts.map(val), ...(cc.ideal ? cc.ideal.map(val) : [0]), 1e-6) * 1.08;
+  const yt = axisTicks(0, yMaxRaw, 4), yTop = Math.max(yt.ticks[yt.ticks.length - 1], yMaxRaw);
+  const X = (h) => pl + h / LIM.h[1] * pw, Y = (v) => pt + ph - v / yTop * ph;
+  g.lineWidth = 1;
+  g.strokeStyle = UI.grid; g.beginPath();
+  for (const v of yt.ticks) { const y = crisp(Y(v)); g.moveTo(pl, y); g.lineTo(pl + pw, y); }
+  for (let h = 0.25; h < LIM.h[1]; h += 0.25) { const x = crisp(X(h)); g.moveTo(x, pt); g.lineTo(x, pt + ph); }
+  g.stroke();
+  // zona fuera del rango de control (h < 0,20 m)
+  g.fillStyle = 'rgba(255,255,255,0.025)'; g.fillRect(pl, pt, X(LIM.h[0]) - pl, ph);
+  g.strokeStyle = UI.frame; g.strokeRect(crisp(pl), crisp(pt), Math.round(pw), Math.round(ph));
+  if (cc.ideal) {
+    g.setLineDash([4, 3]); g.strokeStyle = UI.ideal; g.lineWidth = 1.2; g.beginPath();
+    cc.ideal.forEach((o, i) => g.lineTo(X(LIM.h[1] * i / NH), Y(val(o)))); g.stroke(); g.setLineDash([]);
+  }
+  g.strokeStyle = UI.v; g.lineWidth = 1.6; g.beginPath();
+  cc.pts.forEach((o, i) => g.lineTo(X(LIM.h[1] * i / NH), Y(val(o)))); g.stroke();
+  // registro del vaciado
+  g.fillStyle = UI.ok;
+  for (const r of hist) { g.beginPath(); g.arc(X(r.h), Y(isQ ? r.Q * 1000 : r.x), 2.1, 0, Math.PI * 2); g.fill(); }
+  // punto de operación
+  const cur = isQ ? P.Q * 1000 : P.x, xo = X(S.h), yo = Y(cur);
+  g.setLineDash([2, 3]); g.strokeStyle = 'rgba(245,158,11,.55)'; g.beginPath();
+  g.moveTo(crisp(xo), pt + ph); g.lineTo(crisp(xo), yo); g.lineTo(pl, crisp(yo)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = UI.accent; g.beginPath(); g.arc(xo, yo, 3.6, 0, Math.PI * 2); g.fill();
+  g.font = UI.font(10, 500); g.textBaseline = 'bottom';
+  const txt = isQ ? `${fx(cur, 3)} L/s` : `${fx(cur, 3)} m`;
+  g.textAlign = xo > pl + pw - 80 ? 'right' : 'left';
+  g.fillText(txt, xo + (g.textAlign === 'right' ? -7 : 7), yo - 4);
+  // ejes
+  g.fillStyle = UI.label; g.font = UI.font(9.5); g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (const v of yt.ticks) g.fillText(tickTxt(v, yt.st), pl - 5, Y(v));
+  g.textBaseline = 'top';
+  for (let h = 0; h <= LIM.h[1] + 1e-6; h += 0.5) { g.textAlign = h === 0 ? 'left' : h >= LIM.h[1] - 1e-6 ? 'right' : 'center'; g.fillText(h.toFixed(1), X(h), pt + ph + 5); }
+  g.textAlign = 'left'; g.textBaseline = 'top'; g.font = UI.font(9, 500);
+  g.fillText(isQ ? 'Q (L/s)' : 'x (m)', 4, 1);
+  g.textAlign = 'right'; g.textBaseline = 'top'; g.fillText('h (m)', pl - 5, pt + ph + 5);
+  $('#lg-ideal').style.display = cc.ideal ? '' : 'none';
+}
+
+/* =====================================================================
+   11. ACTUALIZACIÓN DE PARÁMETROS
+   ===================================================================== */
+let geoKey = '';
+function onParams(src = 'ui') {
+  S.D2 = Math.min(S.D2, S.D1);
+  const gk = S.D1.toFixed(4) + '|' + S.D2.toFixed(4);
+  buildGeomSamplesIfNeeded(gk);
+  solve();
+  if (src !== 'drain') syncInputs();
+  buildStreamlines();
+  dirty.panels = true; dirty.charts = true;
+}
+function buildGeomSamplesIfNeeded(gk) {
+  if (gk === geoKey) return;
+  geoKey = gk;
+  buildGeomSamples();
+  rebuildPipe();
+}
+
+/* =====================================================================
+   12. BUCLE PRINCIPAL
+   ===================================================================== */
+let last = performance.now(), uiAcc = 0, fpsAcc = 0, fpsN = 0, frameCount = 0, snapCb = null, wallT = 0;
+function stepDrain(dt) {
+  if (S.mode !== 'drain' || drained || dt <= 0) return;
+  // integración exacta de A_T dh/dt = −k √h con k = Q/√h evaluado en el paso (exacta en el caso ideal)
+  const k = P.Q / Math.sqrt(Math.max(S.h, 1e-9));
+  const sq = Math.sqrt(S.h) - k * dt / (2 * A_T);
+  if (sq <= Math.sqrt(P.hMin)) { S.h = P.hMin; drained = true; }
+  else S.h = sq * sq;
+  onParams('drain');
+  histAcc += dt;
+  if (histAcc >= 0.5 || drained) { histAcc = 0; hist.push({ h: S.h, Q: P.Q, x: P.x }); if (hist.length > 600) hist.shift(); }
+}
+function updateScene(simDt, realDt) {
+  const wH = Y_AX + S.h;
+  // tanque
+  const hW = wH - TANK_BOT;
+  tank.water.scale.y = hW; tank.water.position.y = TANK_BOT + hW / 2;
+  tank.surf.position.y = wH;
+  tank.levelMark.position.y = wH;
+  // llenado: el chorro de entrada iguala el caudal de salida
+  const open = S.mode === 'const' ? 1 : 0;
+  sup.open += (open - sup.open) * (1 - Math.exp(-realDt * 4));
+  sup.wheel.rotation.z = sup.open * Math.PI * 1.5;
+  const showIn = sup.open > 0.02 && P.Q > 1e-7;
+  sup.stream.visible = sup.ripple.visible = showIn;
+  if (showIn) {
+    const v0 = 1.2, r0 = Math.sqrt(P.Q / (Math.PI * v0)) * sup.open;
+    const len = sup.outletY - wH;
+    sup.stream.scale.set(r0, len, r0); sup.stream.position.y = wH + len / 2;
+    const ph = (wallT * 1.6) % 1;
+    const rr = r0 * (2 + 6 * ph);
+    sup.ripple.scale.set(rr, rr, 1); sup.ripple.position.y = wH + 0.002;
+    sup.ripple.material.opacity = 0.6 * (1 - ph);
+  }
+  // piezómetros: la columna llega a la cota Y_AX + h_p
+  for (let k = 0; k < 3; k++) {
+    const o = pz[k], top = Y_AX + P.pz[k].hp;
+    const hcol = Math.min(top, PZ_TOP - 0.004) - o.base;
+    const neg = P.pz[k].hp < 0, show = hcol > 0.002;
+    o.col.visible = o.men.visible = show;
+    if (show) { o.col.scale.y = hcol; o.col.position.y = o.base + hcol / 2; o.men.position.y = o.base + hcol; }
+    o.warn.visible = neg;
+    if (neg) { o.warn.material.opacity = 0.55 + 0.4 * Math.sin(wallT * 8); }
+    const lab = lbl['p' + (k + 1)];
+    setLabel(lab, `h${'₁₂₃'[k]} ${fx(P.pz[k].hp, 3)} m`, neg ? '#FCA5A5' : '#E5E7EB', neg ? '#7F1D1D' : '#2A303C');
+    lab.position.set(o.x + 0.02, Math.max(top, o.base + 0.05) + 0.03, 0.02);
+  }
+  // etiqueta del nivel y del alcance
+  setLabel(lbl.h, `h = ${S.h.toFixed(3)} m`, '#E5E7EB');
+  lbl.h.position.set(-R_T - 0.02, wH + 0.06, R_T * 0.4);
+  lbl.h.center.set(1, 0.5);
+  const xImp = X_N + P.x;
+  tray.mark.position.x = xImp;
+  setLabel(lbl.x, `x = ${fx(P.x, 3)} m`, '#F59E0B', '#5A3D0A');
+  lbl.x.position.set(xImp + 0.03, Y_TRAY + 0.1, 0.17);
+  // chorro y salpicadura
+  updateJetMesh();
+  const tW = jetTEnd(), xW = X_N + P.vs * tW, rJ = jetRadius(tW);
+  for (const [ring, ph0] of [[tray.splash, 0], [tray.splash2, 0.5]]) {
+    const ph = (wallT * 2.2 + ph0) % 1, r = rJ * (1.5 + 7 * ph);
+    ring.visible = P.Q > 1e-7;
+    ring.scale.set(r, r, 1); ring.position.set(xW, tray.waterY + 0.002, 0);
+    ring.material.opacity = 0.7 * (1 - ph);
+  }
+  // partículas
+  updatePipeParticles(simDt);
+  updateJetParticles(simDt);
+  cavA += ((P.cav === 'cav' ? 1 : 0) - cavA) * (1 - Math.exp(-realDt * 4));
+  updateBubbles(simDt);
+  // capas
+  streamGroup.visible = S.streams;
+  updateEnergyLines();
+  lbl.le.visible = lbl.lp.visible = S.energy;
+  if (S.energy) {
+    setLabel(lbl.le, 'LE', '#F59E0B', '#5A3D0A'); lbl.le.position.set(X_N + 0.05, Y_AX + PE[NG] + 0.11, 0);
+    setLabel(lbl.lp, 'LP', '#A78BFA', '#3B2F66'); lbl.lp.position.set(X_N + 0.03, Y_AX + PH[NG] - 0.035, 0);
+  }
+  const on = S.vectors, vref = Math.max(P.vmax, P.vImp, 1e-6);
+  for (const a of Object.values(arr)) a.visible = on;
+  lbl.v1.visible = lbl.v2.visible = lbl.vs.visible = on;
+  if (on) {
+    const L = (v) => 0.03 + 0.26 * v / vref;
+    const xs = S_PZ.map((s) => X0 + s);
+    setArrow(arr.v1, new V3(xs[0] - L(P.v1) / 2, Y_AX, 0), DIR_X, L(P.v1));
+    setArrow(arr.v2, new V3(xs[1] - L(P.v2) / 2, Y_AX, 0), DIR_X, L(P.v2));
+    setArrow(arr.v3, new V3(xs[2] - L(P.v3) / 2, Y_AX, 0), DIR_X, L(P.v3));
+    setArrow(arr.vs, new V3(X_N + 0.01, Y_AX, 0), DIR_X, L(P.vs));
+    const tI = P.tof; jetPoint(tI, _p);
+    setArrow(arr.vi, _p.clone(), new V3(P.vs, -G * tI, 0).normalize(), L(P.vImp));
+    setLabel(lbl.v1, `v₁ ${fx(P.v1, 2)} m/s`, '#22D3EE');
+    setLabel(lbl.v2, `v₂ ${fx(P.v2, 2)} m/s`, '#F59E0B');
+    setLabel(lbl.vs, `vₛ ${fx(P.vs, 2)} m/s`, '#22D3EE');
+    lbl.v1.position.set(xs[0] - 0.12, Y_AX - S.D1 / 200 - 0.05, 0.03);
+    lbl.v2.position.set(xs[1] - 0.06, Y_AX - S.D1 / 200 - 0.09, 0.03);
+    lbl.vs.position.set(X_N + 0.02, Y_AX + 0.06, 0.03);
+  }
+}
+function updatePointUniforms() {
+  const Hpx = renderer.domElement.height;
+  for (const c of [cloudPipe, cloudJet, cloudBub]) {
+    const u = c.material.uniforms;
+    if (activeCam === ortho) { u.uOrtho.value = 1; u.uK.value = Hpx * ortho.zoom / (ortho.top - ortho.bottom); }
+    else { u.uOrtho.value = 0; u.uK.value = Hpx / (2 * tanHalf()); }
+  }
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  const realDt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
+  if (Math.min(window.devicePixelRatio || 1, 2) !== DPR) { resize(); sizeCharts(); dirty.charts = true; }
+  const simDt = S.paused ? 0 : realDt * S.speed;
+  simT += simDt; if (!S.paused) wallT += realDt * S.speed;
+  stepDrain(simDt);
+  updateScene(simDt, realDt);
+
+  if (camTween) stepCamTween(realDt);
+  else { followFrame(realDt); (activeCam === ortho ? ctlO : ctlP).update(); }
+  updatePointUniforms();
+  scaleLabels();
+
+  if (Q.high) composer.render(); else renderer.render(scene, activeCam);
+  frameCount++; Q.wF++;
+  adaptQuality(now);
+  if (snapCb) { const cb = snapCb; snapCb = null; cb(); }
+
+  uiAcc += realDt; fpsAcc += realDt; fpsN++;
+  if (uiAcc > 0.1) {
+    uiAcc = 0;
+    if (dirty.panels) { dirty.panels = false; updatePanels(); drawGauge(); }
+    if (dirty.charts) { dirty.charts = false; drawProfile(); drawDischarge(); }
+    if (S.mode === 'drain') syncInputs();
+    set('t-read', simT.toFixed(2));
+  }
+  if (fpsAcc > 0.5) { $('#fps').textContent = Math.round(fpsN / fpsAcc) + ' FPS'; fpsAcc = 0; fpsN = 0; }
+}
+
+/* =====================================================================
+   13. ARRANQUE
+   ===================================================================== */
+// Calidad adaptable: mide los FPS cada segundo y, si bajan de 40, reduce primero la resolución de render
+// (hasta 0,55×) y después pasa a calidad ligera; no vuelve a subir sola (evita oscilaciones y tirones).
+// Pulsar el botón de calidad reinicia el ajuste.
+function setScale(v) {
+  Q.scale = v; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;   // asentamiento: recompilación y cambio de tamaño
+  renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
+  resize();
+}
+function adaptQuality(now) {
+  if (now - Q.wT < 1000) return;
+  const fps = Q.wF * 1000 / (now - Q.wT); Q.wT = now; Q.wF = 0;
+  if (now - Q.t0 < 2500 || now < Q.settle || document.hidden) return;        // arranque y asentamiento tras un cambio: compilación de shaders y entrada de cámara
+  if (fps >= 40) {
+    Q.slow = 0;
+    // si el rendimiento fue holgado durante 20 s seguidos, se recupera un paso de resolución (máximo 2 veces por sesión)
+    if (fps >= 57 && Q.scale < 1 && Q.retry < 2) { if (++Q.good >= 20) { Q.good = 0; Q.retry++; setScale(Math.min(1, Q.scale + 0.15)); } }
+    else Q.good = 0;
+    return;
+  }
+  Q.good = 0;
+  if (fps >= 12 && ++Q.slow < 2) return;                   // por debajo de 12 FPS basta una medida
+  Q.slow = 0;
+  if (Q.scale > 0.6 && fps >= 12) setScale(Math.max(0.55, Q.scale - 0.15));
+  else if (Q.high) setQuality(false, true);
+  else if (Q.scale > 0.6) setScale(0.55);
+}
+function setQuality(high, auto = false) {
+  Q.high = high; Q.scale = 1; Q.slow = 0; Q.wT = performance.now(); Q.wF = 0; Q.settle = Q.wT + 3000;
+  renderer.setPixelRatio(renderPR()); composer.setPixelRatio(renderPR());
+  if (keyLight) keyLight.castShadow = high;
+  resize();
+  const b = $('#btn-q');
+  b.dataset.q = high ? 'alta' : 'ligera';
+  b.textContent = high ? 'Calidad alta' : (auto ? 'Calidad ligera (auto)' : 'Calidad ligera');
+}
+function stateHash() {
+  const cam = camMode === 'front-free' ? 'front' : camMode === 'free' ? 'iso' : camMode;
+  return new URLSearchParams({ h: S.h.toFixed(3), D1: S.D1, D2: S.D2, fluido: S.fluid, modo: S.mode, perdidas: S.losses ? 1 : 0, vel: S.speed, cam, calidad: Q.high ? 'alta' : 'ligera' }).toString();
+}
+// Estado recuperado desde la URL (#h=…&D1=…&D2=…&fluido=…&modo=…&perdidas=…&vel=…&cam=…&calidad=…)
+const START = (() => {
+  const h = new URLSearchParams(location.hash.slice(1)), out = {};
+  for (const k of ['h', 'D1', 'D2']) { const v = parseFloat(h.get(k)); if (Number.isFinite(v)) S[k] = clamp(v, LIM[k][0], LIM[k][1]); }
+  S.D2 = Math.min(S.D2, S.D1); S.h0 = S.h;
+  if (FLUIDS.some((f) => f.id === h.get('fluido'))) S.fluid = h.get('fluido');
+  if (h.get('perdidas') === '1') S.losses = true;
+  if (['const', 'drain'].includes(h.get('modo'))) out.modo = h.get('modo');
+  if (['1', '0.25', '0.1'].includes(h.get('vel'))) out.vel = h.get('vel');
+  if (['front', 'iso', 'throat'].includes(h.get('cam'))) out.cam = h.get('cam');
+  if (['alta', 'ligera'].includes(h.get('calidad'))) out.calidad = h.get('calidad');
+  return out;
+})();
+$('#btn-q').addEventListener('click', () => setQuality(!Q.high));
+bindControls();
+bindChrome();
+buildPzRows();
+applyFluidLook();
+onParams('init');
+setLosses(S.losses);
+if (START.modo) setMode(START.modo);
+if (START.vel) setSpeed(START.vel);
+resize();
+sizeCharts();
+if (START.calidad === 'ligera' || (!START.calidad && (SOFTWARE_GL || LOWEND))) setQuality(false, !START.calidad);
+if (START.cam) { const F0 = frameFor('iso'); persp.position.copy(F0.pos); ctlP.target.copy(F0.target); persp.lookAt(F0.target); flyTo(START.cam, 0.6); }
+else {
+  const F = frameFor('iso');
+  const off = new V3().subVectors(F.pos, F.target);
+  persp.position.copy(F.target).add(off.multiplyScalar(1.6)).add(new V3(-2.0, 1.4, 0));
+  ctlP.target.copy(F.target).add(new V3(-0.4, 0.2, 0));
+  persp.lookAt(ctlP.target);
+  flyTo('iso', 2.4);
+}
+// Interfaz de diagnóstico de solo lectura para pruebas automáticas
+window.__fluidos = {
+  S, P, LIM, FLUIDS, G, PATM, H_N, A_T, DN, S_PZ,
+  _three: { renderer, scene, composer },
+  setParam, setMode, setLosses, setFluid, setSpeed, togglePause, toggleLayer, flyTo, solve, qAt, exitVelocity, refill,
+  profile: () => ({ s: Array.from(GS), v: Array.from(PV), hp: Array.from(PH), P: Array.from(PK), egl: Array.from(PE) }),
+  get drained() { return drained; }, get simT() { return simT; }, get frames() { return frameCount; }, get camMode() { return camMode; },
+  get tweening() { return !!camTween; }, get activeCam() { return activeCam === ortho ? 'ortho' : 'persp'; },
+  get quality() { return Q.high ? 'alta' : 'ligera'; }, glName: GL_NAME, hist: () => hist.slice(),
+  scene3d: () => ({
+    tankSurf: tank.surf.position.y, pzTops: pz.map((o) => (o.col.visible ? o.men.position.y : null)), pzWarn: pz.map((o) => o.warn.visible),
+    jetEnd: (() => { const a = jet.mesh.geometry.attributes.position.array, n = a.length; return [a[n - 3 * 7], a[n - 3 * 7 + 1]]; })(),
+    markX: tray.mark.position.x, inflow: sup.stream.visible, bubbles: cloudBub.visible, streams: streamGroup.visible, egl: egl.visible, arrows: arr.v1.visible,
+  }),
+  gpu: () => ({ geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, lost: renderer.getContext().isContextLost(), size: [canvas.width, canvas.height] }),
+  snapshot: () => new Promise((res) => {
+    snapCb = () => {
+      const c = document.createElement('canvas'); c.width = 96; c.height = 54;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(canvas, 0, 0, 96, 54);
+      const d = g.getImageData(0, 0, 96, 54).data;
+      let s1 = 0, s2 = 0; const n = d.length / 4;
+      for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; s1 += l; s2 += l * l; }
+      const mean = s1 / n; res({ mean, std: Math.sqrt(Math.max(0, s2 / n - mean * mean)) });
+    };
+  }),
+};
+document.fonts && document.fonts.ready.then(() => { labels.forEach((l) => { l.userData.text = ''; }); gaugeLast = ''; dirty.charts = true; dirty.panels = true; });
+
+requestAnimationFrame((t) => { last = t; frame(t); });
+requestAnimationFrame(() => { $('#loader').classList.add('done'); window.__fluidos_ready = true; });
+
+window.addEventListener('pagehide', (ev) => {
+  if (ev.persisted) return;
+  scene.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+  });
+  envTex.dispose(); composer.dispose(); renderer.dispose();
+});
+</script>
+</body>
+</html>
